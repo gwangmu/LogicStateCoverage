@@ -1,0 +1,4 @@
+#!/bin/bash
+
+xdg-open main.pdf >/dev/null 2>&1
+vim main.tex

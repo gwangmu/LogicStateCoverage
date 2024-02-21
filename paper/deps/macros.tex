@@ -1,0 +1,180 @@
+% !TEX root = main.tex
+% Author Macros
+\newcounter{gm} % Gwangmu 
+\newcounter{du} % Duo 
+\newcounter{so} % Solmaz 
+\newcounter{by} % Byoungyoung
+\newcounter{ma} % Mathias
+
+%\def\enablecomm{1}  % NOTE: comment this out to disable comments.
+\ifx\enablecomm\undefined
+  \newcommand{\gm}[1]{}
+  \newcommand{\du}[1]{}
+  \newcommand{\so}[1]{}
+  \newcommand{\by}[1]{}
+  \newcommand{\mat}[1]{}
+\else
+  \newcommand{\gm}[1]{\textcolor{teal}{\{Gwangmu-\arabic{gm}: #1\}}\addtocounter{gm}{1}}
+  \newcommand{\du}[1]{\textcolor{red}{\{Duo-\arabic{du}: #1\}}\addtocounter{du}{1}}
+  \newcommand{\so}[1]{\textcolor{orange}{\{Solmaz-\arabic{so}: #1\}}\addtocounter{so}{1}}
+  \newcommand{\by}[1]{\textcolor{blue}{\{Byoungyoung-\arabic{by}: #1\}}\addtocounter{by}{1}}
+  \newcommand{\mat}[1]{\textcolor{purple}{\{Mathias-\arabic{ma}: #1\}}\addtocounter{ma}{1}}
+\fi
+
+% Ignore is always useful
+\newcommand{\ignore}[1]{}
+
+% References
+\newcommand{\sect}[1]{\ensuremath{\sf Section~\ref{#1}}}
+\newcommand{\fig}[1]{\ensuremath{\sf Figure~\ref{#1}}}
+\newcommand{\tbl}[1]{\ensuremath{\sf Table~\ref{#1}}}
+\newcommand{\lst}[1]{\ensuremath{\sf Listing~\ref{#1}}}
+
+% Styling
+\newcommand{\cc}[1]{\mbox{\smaller[0.5]\texttt{#1}}}
+\newcommand{\ff}[1]{\begingroup\smaller[0.5]\textsf{#1}\endgroup}
+\newcommand{\pp}[1]{\vspace{2px}\noindent{\bf \IfEndWith{#1}{.}{#1}{#1.}}}
+\newcommand{\ppi}[1]{\vspace{10px}\noindent{\it \hspace{6px}\IfEndWith{#1}{.}{#1}{#1.}}\vspace{10px}}
+
+% Editing
+%\makeatletter
+%\newcount\my@repeat@count
+%\newcommand{\repchar}[2]{%
+%  \begingroup
+%    \my@repeat@count=\z@
+%    \@whilenum\my@repeat@count<#1\do{#2\advance\my@repeat@count\@ne}%
+%  \endgroup
+%}
+%\makeatother
+%\newcommand{\fillnum}[1]{\textcolor{purple}{\repchar{#1}{X}}}
+%\newcommand{\filldec}[2]{\textcolor{purple}{\repchar{#1}{X}.\repchar{#2}{X}}}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+\newcommand{\gist}[1]{\textcolor{red}{[Gist]}\xspace#1}
+\newcommand{\fillme}[1]{\textcolor{red}{Fill:\xspace#1}}
+
+% System names 
+\newcommand{\sys}{SyzRisk\xspace}    % gwangmu: will be changed.
+\newcommand{\joern}{Joern\xspace}
+\newcommand{\syzk}{Syzkaller\xspace}
+\newcommand{\aflc}{AFLChurn\xspace}
+
+% Acronyms
+\acrodef{CA}{client application}
+\acrodef{CAlib}{\ac{CA} library}
+
+% Autoref prefix
+\renewcommand{\sectionautorefname}{Section}
+\renewcommand{\subsectionautorefname}{Section}
+\renewcommand{\subsubsectionautorefname}{Section}
+
+% Ability to add circles with labels in the text
+\newcommand\encircle[1]{%
+  \tikz[baseline=(X.base)] 
+    \node (X) [draw, shape=circle, inner sep=0em,text width=1em, text centered] {\scriptsize #1};}
+
+% Some lstlisting styles
+\definecolor{DGreen}{rgb}{0,0.4,0.05}
+\definecolor{DBlue}{rgb}{0.02, 0.2, 0.5}
+\definecolor{DRed}{rgb}{0.7, 0.2, 0.1}
+\lstdefinelanguage{diff}{
+  morecomment=[f][\color{DBlue}]{@@},     % group identifier
+  morecomment=[f][\color{DRed}]-,         % deleted lines 
+  morecomment=[f][\color{DGreen}]+,       % added lines
+  morecomment=[f][\color{purple}]{---}, % Diff header lines (must appear after +,-)
+  morecomment=[f][\color{purple}]{+++},
+}
+
+\makeatletter
+\newcommand\notsotiny{\@setfontsize\notsotiny{6.2}{7}}
+\makeatother
+
+\definecolor{DBack}{rgb}{0.98, 0.98, 0.98}
+\definecolor{DFrame}{rgb}{0.5, 0.5, 0.5}
+\lstdefinestyle{diff}{
+  numbers=left, 
+  basicstyle=\ttfamily\notsotiny,
+  xleftmargin=1.5em,
+  frame=l,
+  framexleftmargin=0.3em,
+  frame=single,
+  captionpos=b,
+  language=diff,
+  backgroundcolor=\color{DBack},
+  rulecolor=\color{DFrame},
+  escapeinside={<@}{@>}
+}
+
+\lstdefinestyle{c}{
+  numbers=left, 
+  basicstyle=\ttfamily\scriptsize,
+  xleftmargin=1.5em,
+  frame=l,
+  framexleftmargin=0.3em,
+  frame=single,
+  captionpos=b,
+  language=c,
+  escapeinside={<@}{@>},
+  keywordstyle=[2]{\texttt},
+  backgroundcolor=\color{DBack},
+  rulecolor=\color{DFrame},
+  morekeywords=[2]{type}
+}
+
+\lstdefinestyle{python}{
+  numbers=left, 
+  basicstyle=\ttfamily\scriptsize,
+  xleftmargin=1.5em,
+  frame=l,
+  framexleftmargin=0.3em,
+  frame=single,
+  captionpos=b,
+  language=Python,
+  escapeinside={<@}{@>},
+  keywordstyle=[2]{\texttt},
+  backgroundcolor=\color{DBack},
+  rulecolor=\color{DFrame},
+  morekeywords=[2]{type}
+}
+
+\lstdefinestyle{scala}{
+  numbers=left, 
+  basicstyle=\ttfamily\scriptsize,
+  xleftmargin=1.5em,
+  frame=l,
+  framexleftmargin=0.3em,
+  frame=single,
+  captionpos=b,
+  escapeinside={<@}{@>},
+  backgroundcolor=\color{DBack},
+  rulecolor=\color{DFrame},
+  keywordstyle=[2]{\textbf},
+  morekeywords = [2]{def},
+  morekeywords = [2]{val},
+  morekeywords = [2]{Boolean},
+  morekeywords = [2]{return}
+}
+
+% 'Observation' title class
+%\titleclass{\observation}[-1]{straight}
+%\newcounter{observation}
+%\titleformat{\observation}
+%  {\normalfont\it}
+%  {\hspace{4px}\arabic{observation})}
+%  {4px}{#1}
+%\titlespacing{\observation}{0pt}{1.5ex plus .2ex}{1.5ex plus .2ex}
+%\newcommand{\observationautorefname}{Observation}
+\newcounter{theobservation}
+\newcommand{\observation}[1]{
+  \refstepcounter{theobservation}
+  \vspace{-0.8em}
+  \subsection*{\hspace{4px}\normalsize\it\arabic{theobservation})\enspace#1}
+  \vspace{0.2em}
+}
+\newcommand{\obsref}[1]{\hyperref[s:obs:#1]{Observation \ref{s:obs:#1}}}
+
+\DeclareSIUnit{\exec}{exec}
+\DeclareSIUnit{\state}{state}
+\DeclareSIUnit{\bit}{bit}
+\DeclareSIUnit{\mb}{MB}
+\DeclareSIUnit{\mbit}{Mbit}
+\DeclareSIUnit{\mb}{MB}
