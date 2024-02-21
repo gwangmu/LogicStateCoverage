@@ -1,0 +1,4 @@
+[submodule "paper"]
+	path = paper
+	url = git@github.com:gwangmu/prog-space-cov.git
+	branch = master
