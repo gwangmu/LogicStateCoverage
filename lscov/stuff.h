@@ -14,10 +14,32 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 /* Version string */
 
 #define VERSION "0.01"
+
+/* Standard integer types */
+
+typedef uint8_t  u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t   s8;
+typedef int16_t  s16;
+typedef int32_t  s32;
+typedef int64_t  s64;
+
+/* Memory barrier */
+
+#define MEM_BARRIER() \
+  __asm__ volatile("" ::: "memory")
+
+/* Environment variable used to pass SHM ID to the called program. */
+
+#define SHM_ENV_VAR "__LSCOV_SHM_ID"
 
 /* Logic state size: simply following MAP_SIZE in AFL. */
 
@@ -238,3 +260,11 @@
 /* Random number */
 
 #define RANDOM(x) (random() % (x))
+
+/* Logic state recording status */
+
+typedef uint8_t lsrec_stat_t;
+
+#define LSREC_RDY ((lsrec_stat_t)0)   // Ready for recording; SHM cleared
+#define LSREC_REC ((lsrec_stat_t)1)   // Now recording
+#define LSREC_FIN ((lsrec_stat_t)2)   // Recording finished
