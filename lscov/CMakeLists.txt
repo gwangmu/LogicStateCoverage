@@ -22,10 +22,12 @@ ADD_LIBRARY(LSCovPass SHARED ${INSTRU_SRCS})
 FILE(GLOB WRAPPER_SRCS "lscov-clang.cc")
 ADD_EXECUTABLE(lscov-clang ${WRAPPER_SRCS})
 TARGET_LINK_LIBRARIES(lscov-clang LSCovPass ${LLVM_AVAILABLE_LIBS})
-ADD_EXECUTABLE(lscov-clang++ ${WRAPPER_SRCS})
-TARGET_LINK_LIBRARIES(lscov-clang++ LSCovPass ${LLVM_AVAILABLE_LIBS})
 
-ADD_CUSTOM_TARGET(clang ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
-  ${WRAP_CC_PATH} ${LSCovLogicState_BINARY_DIR}/clang)
-ADD_CUSTOM_TARGET(clang++ ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
-  ${WRAP_CXX_PATH} ${LSCovLogicState_BINARY_DIR}/clang++) 
+ADD_CUSTOM_TARGET(lscov-clang++ ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
+  ${LSCovLogicState_BINARY_DIR}/lscov-clang
+  ${LSCovLogicState_BINARY_DIR}/lscov-clang++)
+
+ADD_CUSTOM_TARGET(wrap-clang ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
+  ${WRAP_CC_PATH} ${LSCovLogicState_BINARY_DIR}/wrap-clang)
+ADD_CUSTOM_TARGET(wrap-clang++ ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
+  ${WRAP_CXX_PATH} ${LSCovLogicState_BINARY_DIR}/wrap-clang++) 

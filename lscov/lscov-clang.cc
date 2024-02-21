@@ -31,9 +31,9 @@ int main(int argc, char** argv) {
 
   std::string real_exepath;
   if (exename.length() >= 2 && exename.substr(exename.length() - 2) == "++")
-    real_exepath = basepath + "/clang++";
+    real_exepath = basepath + "/wrap-clang++";
   else
-    real_exepath = basepath + "/clang";
+    real_exepath = basepath + "/wrap-clang";
   cc_params[0] = (char*)real_exepath.c_str();
 
   std::string clang_chk = "which " + real_exepath + " >/dev/null 2>&1";
