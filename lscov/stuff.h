@@ -1,41 +1,28 @@
 /*
-  Copyright 2013 Google LLC All rights reserved.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at:
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-/*
-   american fuzzy lop - debug / error handling macros
-   --------------------------------------------------
-
-   Written and maintained by Michal Zalewski <lcamtuf@google.com>
-*/
-
-/*
- * lscov - debug macros 
- * --------------------
- * 
- * Blatantly stolen from AFL. (https://github.com/google/AFL)
+ * lscov - stuff 
+ * -------------
+ *
+ * Constants, debug macros, and stuff.
+ * Debug macros blatantly stolen from AFL. (https://github.com/google/AFL)
  * See "debug.h" in AFL for the original implementation.
  */
 
-#ifndef _HAVE_DEBUG_H
-#define _HAVE_DEBUG_H
+/* We're living in 2024 and still recommended to implement header guards
+   with 'ifndef...endif'. I'll just use 'pragma once' because I have little
+   regard to the de-jure standard (and it's no network software either). */
+#pragma once
 
 #include <errno.h>
+#include <stdlib.h>
 
-#include "types.h"
-#include "config.h"
+/* Version string */
+
+#define VERSION "0.01"
+
+/* Logic state size: simply following MAP_SIZE in AFL. */
+
+#define LSTATE_SIZE_POW2 16
+#define LSTATE_SIZE      (1 << LSTATE_SIZE_POW2)
 
 /*******************
  * Terminal colors *
@@ -248,19 +235,6 @@
     if (res < 0) PFATAL(x); else FATAL(x); \
   } while (0)
 
-/* Error-checking versions of read() and write() that call RPFATAL() as
-   appropriate. */
+/* Random number */
 
-#define ck_write(fd, buf, len, fn) do { \
-    u32 _len = (len); \
-    s32 _res = write(fd, buf, _len); \
-    if (_res != _len) RPFATAL(_res, "Short write to %s", fn); \
-  } while (0)
-
-#define ck_read(fd, buf, len, fn) do { \
-    u32 _len = (len); \
-    s32 _res = read(fd, buf, _len); \
-    if (_res != _len) RPFATAL(_res, "Short read from %s", fn); \
-  } while (0)
-
-#endif /* ! _HAVE_DEBUG_H */
+#define RANDOM(x) (random() % (x))

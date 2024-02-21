@@ -17,8 +17,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-#include <cstdlib>
-#include "debug.h"
+#include "stuff.h"
 
 using namespace llvm;
 
@@ -56,7 +55,7 @@ PreservedAnalyses IRTestbed::run(Module &M, ModuleAnalysisManager &MAM) {
       IRBuilder<> IRB(&(*IP));
 
       /* Make up cur_loc */
-      unsigned int cur_loc = random() % LSTATE_SIZE;
+      unsigned int cur_loc = RANDOM(LSTATE_SIZE);
       ConstantInt *CurLoc = ConstantInt::get(Int32Ty, cur_loc);
 
       /* Load prev_loc */
