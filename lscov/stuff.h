@@ -1,6 +1,6 @@
 /*
- * lscov - stuff 
- * -------------
+ * lscov - good stuff 
+ * ------------------
  *
  * Constants, debug macros, and stuff.
  * Debug macros blatantly stolen from AFL. (https://github.com/google/AFL)
@@ -9,12 +9,13 @@
 
 /* We're living in 2024 and still recommended to implement header guards
    with 'ifndef...endif'. I'll just use 'pragma once' because I have little
-   regard to the de-jure standard (and it's no network software either). */
+   regard to the de-jure standard (and it's no big code base anyway). */
 #pragma once
 
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /* Version string */
 

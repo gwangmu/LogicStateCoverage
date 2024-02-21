@@ -7,6 +7,8 @@
  * See "llvm_mode/afl-llvm-rt.o.c" for the reference implementation.
  */
 
+#include <sys/types.h>
+#include <sys/shm.h>
 #include "stuff.h"
 
 /* Constructor/destructor priority. Using some arbitrarily low priority. */
@@ -26,7 +28,7 @@ __thread u32   __lscov_prev_loc;
 
 __attribute__((constructor(CONST_PRIO))) 
 void __lscov_init(void) {
-  u8 *id_str = getenv(SHM_ENV_VAR);
+  char *id_str = getenv(SHM_ENV_VAR);
 
   /* Same as AFL. If we're running with logic state coverage measurement, attach
      to the appropriate region. SHM_ENV_VAR should be set in the measurement
@@ -38,7 +40,7 @@ void __lscov_init(void) {
 
     if (__lscov_area_ptr == (void *)-1) {
       WARNF("Shared memory not attached. Did you start the daemon?");
-      _exit(1);
+      exit(1);
     }
 
     /* Adjust pointers */
