@@ -17,11 +17,11 @@
 
 /* Globals for instrumentation */
 
-u8             __lscov_area_initial[LSTATE_SIZE + sizeof(lsrec_stat_t)];
-u8*            __lscov_area_ptr = __lscov_area_initial + sizeof(lsrec_stat_t);
-lsrec_stat_t*  __lscov_recstat_ptr = __lscov_area_initial; 
+u8           __lscov_area_initial[LSTATE_SIZE + sizeof(recstat_t)];
+u8*          __lscov_area_ptr = __lscov_area_initial + sizeof(recstat_t);
+recstat_t*   __lscov_recstat_ptr = __lscov_area_initial; 
 
-__thread u32   __lscov_prev_loc;
+__thread u32 __lscov_prev_loc;
 
 
 /* Initialization (per execution) */
@@ -45,7 +45,7 @@ void __lscov_init(void) {
 
     /* Adjust pointers */
     __lscov_recstat_ptr = __lscov_area_ptr;
-    __lscov_area_ptr += sizeof(lsrec_stat_t);
+    __lscov_area_ptr += sizeof(recstat_t);
 
     /* If the destructor was not called in the last execution (e.g., due to a
        crash), mark it finished and let the daemon do its job. This hack will

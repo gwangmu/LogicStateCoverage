@@ -264,8 +264,8 @@ typedef int64_t  s64;
 
 /* Logic state recording status */
 
-typedef uint8_t lsrec_stat_t;
+typedef uint8_t recstat_t;
 
-#define LSREC_RDY ((lsrec_stat_t)0)   // Ready for recording; SHM cleared
-#define LSREC_REC ((lsrec_stat_t)1)   // Now recording
-#define LSREC_FIN ((lsrec_stat_t)2)   // Recording finished
+#define RECSTAT_RDY ((recstat_t)0)   // Ready for recording; SHM cleared
+#define RECSTAT_REC ((recstat_t)1)   // Now recording
+#define RECSTAT_FIN ((recstat_t)2)   // Recording finished

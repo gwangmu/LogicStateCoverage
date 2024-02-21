@@ -1,9 +1,6 @@
 PROJECT(LSCovLogicState)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.8)
 
-FILE(GLOB RT_SRCS "lscov-llvm-rt.a.c")
-ADD_LIBRARY(LSCovRT STATIC ${RT_SRCS})
-
 set(CMAKE_CXX_FLAGS_OLD ${CMAKE_CXX_FLAGS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_OLD} -fno-rtti -fpic")
 
@@ -16,6 +13,9 @@ INCLUDE_DIRECTORIES(${LLVM_INCLUDE_DIRS})
 
 LIST(APPEND CMAKE_PROGRAM_PATH ${LLVM_ROOT_DIR})
 
+FILE(GLOB RT_SRCS "lscov-llvm-rt.a.c")
+ADD_LIBRARY(LSCovRT STATIC ${RT_SRCS})
+
 FILE(GLOB INSTRU_SRCS "lscov-llvm-pass.so.cc")
 ADD_LIBRARY(LSCovPass SHARED ${INSTRU_SRCS})
 
@@ -23,11 +23,10 @@ FILE(GLOB WRAPPER_SRCS "lscov-clang.cc")
 ADD_EXECUTABLE(lscov-clang ${WRAPPER_SRCS})
 TARGET_LINK_LIBRARIES(lscov-clang LSCovPass ${LLVM_AVAILABLE_LIBS})
 
-ADD_CUSTOM_TARGET(lscov-clang++ ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
-  ${LSCovLogicState_BINARY_DIR}/lscov-clang
-  ${LSCovLogicState_BINARY_DIR}/lscov-clang++)
+FILE(CREATE_LINK ${LSCovLogicState_BINARY_DIR}/lscov-clang
+  ${LSCovLogicState_BINARY_DIR}/lscov-clang++ SYMBOLIC)
 
-ADD_CUSTOM_TARGET(wrap-clang ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
-  ${WRAP_CC_PATH} ${LSCovLogicState_BINARY_DIR}/wrap-clang)
-ADD_CUSTOM_TARGET(wrap-clang++ ALL COMMAND ${CMAKE_COMMAND} -E create_symlink
-  ${WRAP_CXX_PATH} ${LSCovLogicState_BINARY_DIR}/wrap-clang++) 
+FILE(CREATE_LINK ${WRAP_CC_PATH} 
+  ${LSCovLogicState_BINARY_DIR}/wrap-clang SYMBOLIC)
+FILE(CREATE_LINK ${WRAP_CXX_PATH} 
+  ${LSCovLogicState_BINARY_DIR}/wrap-clang++ SYMBOLIC) 
