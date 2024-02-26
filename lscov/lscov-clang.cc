@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
   std::string pass_plugin = "-fpass-plugin=" + _libpath;
   std::string rt_obj = std::string(basepath + "/libLSCovRT.a");
 
+  cc_params[cc_par_cnt++] = (char*)"-lpthread";
   cc_params[cc_par_cnt++] = (char*)"-Xclang";
   cc_params[cc_par_cnt++] = (char*)pass_plugin.c_str();
   cc_params[cc_par_cnt++] = (char*)rt_obj.c_str();

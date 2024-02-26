@@ -8,23 +8,26 @@
  * Supposed to start before (and run parallely with) a fuzzer.
  */
 
+#include <fcntl.h>
 #include <math.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
 #include "stuff.h"
 
 /* Parameters */
 
-time_t    tallying_period = 600;          // Tallying period (in seconds) 
-u32       bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
-u8        num_hashes = 4;                 // Number of hashes
-const u8* out_path = "lscov.out";         // Output path
-u8        error_percent = 95;             // Error bound (0: disabled)
+time_t      tallying_period = 600;          // Tallying period (in seconds) 
+u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
+u8          num_hashes = 4;                 // Number of hashes
+const char* out_path = "lscov.out";         // Output path
+u8          error_percent = 95;             // Error bound (0: disabled)
 
 /* State variables */
 
@@ -55,9 +58,9 @@ void out_init() {
 void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
   FILE *fout = fopen(out_path, "a");
 
-  fprintf(fout, "%lu,%lu", time, cov);
+  fprintf(fout, "%u,%u", time, cov);
   if (error_percent > 0)
-    fprintf(fout, "%lu,%lu\n", lower_err, upper_err);
+    fprintf(fout, "%u,%u\n", lower_err, upper_err);
   else
     fprintf(fout, "\n");
 
@@ -65,9 +68,8 @@ void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
 }
 
 
-inline int hcount_wait_until_ready() {
-  // TODO: RT-side should post 'sema_rd'.
-  return sem_timedwait(sema_rd, loop_timeout);
+static inline int hcount_wait_until_ready() {
+  return sem_timedwait(sema_rd, &loop_timeout);
 }
 
 void hcount_bucket_to_lstate(u8* lstate) {
@@ -93,7 +95,7 @@ void hcount_bucket_to_lstate(u8* lstate) {
 
 void hcount_nuke() {
   memset(hit_counts, 0, LSTATE_SIZE);
-  sem_post(sema_dr);  // TODO: RT-side should wait for 'sema_dr'.
+  sem_post(sema_dr);
 }
 
 void hcount_init() {
@@ -184,6 +186,7 @@ u32 bfilter_get_hash_index(const u8 *lstate, u32 seed) {
       k = (k << r1) | (k >> (32 - r1));
       k *= c2;
       h ^= k;
+    case 0:;
   }
 
   h ^= len;
@@ -202,7 +205,7 @@ void bfilter_set_1_by_index(u32 idx) {
   u8 bit_idx = idx & 0x07;
 
   if (byte_idx >= bloom_filter_size)
-    FATAL("bogus 'byte_idx' for a bloom filter (byte_idx: %lu, size: %lu)",
+    FATAL("bogus 'byte_idx' for a bloom filter (byte_idx: %d, size: %u)",
         byte_idx, bloom_filter_size);
 
   bloom_filter[byte_idx] |= (1 << bit_idx);
@@ -210,12 +213,12 @@ void bfilter_set_1_by_index(u32 idx) {
 
 u32 bfilter_calc_cardinality() {
   /* Tally 1s in the filter. */
-  u32 count = 0;
+  u32 num_1s = 0;
 
   for (int i = 0; i < bloom_filter_size; i++) {
     u8 _byte = bloom_filter[i];
     while (_byte) {
-      count += (_byte & 0x01);
+      num_1s += (_byte & 0x01);
       _byte >>= 1;
     }
   }
@@ -244,7 +247,7 @@ void bfilter_init() {
 }
 
 
-inline int tally_is_next_time() {
+static inline int tally_is_next_time() {
   return (next_tallying_time > time(NULL));
 }
 
@@ -282,7 +285,7 @@ void lscov_loop() {
     int sem_rd_ret = hcount_wait_until_ready(); 
 
     /* Update the filter. */
-    if (!sem_rd_get) {
+    if (!sem_rd_ret) {
       /* Bucketize the hit counts, making a logic state. */
       static u8* lstate;
       if (!lstate)
@@ -314,7 +317,7 @@ void lscov_stop(int sig) {
 void sig_init() {
   /* Install cleanup handler. */
   struct sigaction sa;
-  sa.sa_handler = stop_lscov;
+  sa.sa_handler = lscov_stop;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
 

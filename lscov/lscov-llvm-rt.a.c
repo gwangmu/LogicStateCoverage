@@ -7,6 +7,7 @@
  * See "llvm_mode/afl-llvm-rt.o.c" for the reference implementation.
  */
 
+#include <semaphore.h>
 #include <sys/types.h>
 #include <sys/shm.h>
 #include "stuff.h"
@@ -41,18 +42,13 @@ void __lscov_init(void) {
     if (__lscov_area_ptr == (void *)-1) 
       PFATAL("shmat() for hit_count failed");
 
-    s32 shm_sema_rd_id = shmget(LSCOV_SHM_SEMA_RD_KEY, sizeof(sem_t), 
-        IPC_CREAT | IPC_EXCL | 0666);
-    if (shm_sema_rd_id < 0) 
-      PFATAL("shmget() for sema_rd failed");
-
     /* Initialize semaphores. */
-    sema_rd = sem_open(LSCOV_SEMA_RD_NAME, 0, 0644, 0);
-    if (sema_rd == (void *)-1) 
+    __lscov_sema_rd = sem_open(LSCOV_SEMA_RD_NAME, 0, 0644, 0);
+    if (__lscov_sema_rd == (void *)-1) 
       PFATAL("sem_open() for sema_rd failed");
 
-    sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
-    if (sema_dr == (void *)-1) 
+    __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
+    if (__lscov_sema_dr == (void *)-1) 
       PFATAL("sem_open() for sema_dr failed");
 
     /* If the destructor was not called in the last execution (e.g., due to a
@@ -60,14 +56,14 @@ void __lscov_init(void) {
        make the daemon ignore the very last execution if it was a crash, but
        it's just only *one* execution. */
     int _sema_rd_val, _sema_dr_val;
-    sem_getvalue(sema_rd, &_sema_rd_val);
-    sem_getvalue(sema_dr, &_sema_dr_val);
+    sem_getvalue(__lscov_sema_rd, &_sema_rd_val);
+    sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
 
     if (!_sema_dr_val && !_sema_rd_val)
-      sem_post(sema_rd);
+      sem_post(__lscov_sema_rd);
 
     /* Wait until SHM is ready */
-    sem_wait(sema_dr);
+    sem_wait(__lscov_sema_dr);
   }
 }
 
@@ -76,5 +72,5 @@ void __lscov_init(void) {
 __attribute__((destructor(CONST_PRIO))) 
 void __lscov_fin(void) {
   /* Mark the end of recording, if there was no crash. */
-  sem_post(sema_rd);
+  sem_post(__lscov_sema_rd);
 }
