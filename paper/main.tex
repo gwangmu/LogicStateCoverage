@@ -962,8 +962,8 @@ still incorporates \emph{semantically} abnormal behaviors (i.e., semantic bugs)
 by means of exceptions. To be specific, semantic error detection such as
 semantic sanitizers \cite{kim2019hydra,yun2016apisan} may capture semantic bugs
 on the fly and make the behavior abnormal by terminating it. The definition
-allows this as exceptions reference the data context before it is revealed to
-the output.
+allows this because the output is just an observable subset of the data context
+during the execution, which exceptions can reference at runtime.
 
 
 \section{Related Work}
