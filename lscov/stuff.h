@@ -260,6 +260,6 @@ typedef int64_t  s64;
 
 /* SHM parameters */
 
-#define LSCOV_SHM_HCOUNT_KEY    0xdead
-#define LSCOV_SHM_SEMA_RD_KEY   0xbeef
-#define LSCOV_SHM_SEMA_DR_KEY   0x1ee7
+#define LSCOV_SHM_HCOUNT_KEY  0xdead
+#define LSCOV_SEMA_RD_NAME    "__lscov_sema_rd" 
+#define LSCOV_SEMA_DR_NAME    "__lscov_sema_dr"

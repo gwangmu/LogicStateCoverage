@@ -29,8 +29,6 @@ u8        error_percent = 95;             // Error bound (0: disabled)
 /* State variables */
 
 s32         shm_hcount_id;        // (SHM) ID for 'hit_count'
-s32         shm_sema_rd_id;
-s32         shm_sema_dr_id;
 u8*         hit_counts;           // (SHM) Branch hit counts
 sem_t*      sema_rd;
 sem_t*      sema_dr;
@@ -105,42 +103,29 @@ void hcount_init() {
   if (shm_hcount_id < 0) 
     PFATAL("shmget() for hit_count failed");
 
-  hit_counts = (u8 *)shmat(shm_id, NULL, 0);
+  hit_counts = (u8 *)shmat(shm_hcount_id, NULL, 0);
   if (hit_counts == (void *)-1) 
     PFATAL("shmat() for hit_count failed");
 
-  shm_sema_rd_id = shmget(LSCOV_SHM_SEMA_RD_KEY, sizeof(sem_t), 
-      IPC_CREAT | IPC_EXCL | 0666);
-  if (shm_sema_rd_id < 0) 
-    PFATAL("shmget() for sema_rd failed");
-
-  sema_rd = (sem_t *)shmat(shm_id, NULL, 0);
+  /* Initialize semaphores. */
+  sema_rd = sem_open(LSCOV_SEMA_RD_NAME, O_CREAT, 0644, 0);
   if (sema_rd == (void *)-1) 
-    PFATAL("shmat() for sema_rd failed");
+    PFATAL("sem_open() for sema_rd failed");
 
-  shm_sema_dr_id = shmget(LSCOV_SHM_SEMA_DR_KEY, sizeof(sem_t), 
-      IPC_CREAT | IPC_EXCL | 0666);
-  if (shm_sema_dr_id < 0) 
-    PFATAL("shmget() for sema_dr failed");
-
-  sema_dr = (sem_t *)shmat(shm_id, NULL, 0);
+  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 1);
   if (sema_dr == (void *)-1) 
-    PFATAL("shmat() for sema_dr failed");
+    PFATAL("sem_open() for sema_dr failed");
 
-  /* Initialize 'hit_count' and semaphores. */
+  /* Initialize 'hit_count'. */
   hcount_nuke();
-  if (sem_init(sema_rd, 1, 1) != 0)
-    PFATAL("sema_rd init failed");
-  if (sem_init(sema_dr, 1, 1) != 0)
-    PFATAL("sema_dr init failed");
 }
 
 void hcount_stop() {
-  sem_destroy(sema_rd);
-  sem_destroy(sema_dr);
   shmctl(shm_hcount_id, IPC_RMID, NULL);
-  shmctl(shm_sema_rd_id, IPC_RMID, NULL);
-  shmctl(shm_sema_dr_id, IPC_RMID, NULL);
+  sem_close(sema_rd);
+  sem_close(sema_dr);
+  sem_unlink(LSCOV_SEMA_RD_NAME);
+  sem_unlink(LSCOV_SEMA_DR_NAME);
 }
 
 

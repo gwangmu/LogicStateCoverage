@@ -17,49 +17,58 @@
 
 /* Globals for instrumentation */
 
-u8           __lscov_area_initial[LSTATE_SIZE + sizeof(recstat_t)];
-u8*          __lscov_area_ptr = __lscov_area_initial + sizeof(recstat_t);
-recstat_t*   __lscov_recstat_ptr = __lscov_area_initial; 
-
+u8           __lscov_area_initial[LSTATE_SIZE];
+u8*          __lscov_area_ptr = __lscov_area_initial;
 __thread u32 __lscov_prev_loc;
+
+sem_t*       __lscov_sema_rd;
+sem_t*       __lscov_sema_dr;
 
 
 /* Initialization (per execution) */
 
 __attribute__((constructor(CONST_PRIO))) 
 void __lscov_init(void) {
-  char *id_str = getenv(SHM_ENV_VAR);
-
   /* Same as AFL. If we're running with logic state coverage measurement, attach
      to the appropriate region. SHM_ENV_VAR should be set in the measurement
      daemon, of course. */
 
-  if (id_str) {
-    u32 shm_id = atoi(id_str);
-    __lscov_area_ptr = shmat(shm_id, NULL, 0);
+  s32 shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 
+      IPC_CREAT | IPC_EXCL | 0600);
 
-    if (__lscov_area_ptr == (void *)-1) {
-      WARNF("Shared memory not attached. Did you start the daemon?");
-      exit(1);
-    }
+  if (shm_hcount_id >= 0) {
+    __lscov_area_ptr = (u8 *)shmat(shm_hcount_id, NULL, 0);
+    if (__lscov_area_ptr == (void *)-1) 
+      PFATAL("shmat() for hit_count failed");
 
-    /* Adjust pointers */
-    __lscov_recstat_ptr = __lscov_area_ptr;
-    __lscov_area_ptr += sizeof(recstat_t);
+    s32 shm_sema_rd_id = shmget(LSCOV_SHM_SEMA_RD_KEY, sizeof(sem_t), 
+        IPC_CREAT | IPC_EXCL | 0666);
+    if (shm_sema_rd_id < 0) 
+      PFATAL("shmget() for sema_rd failed");
+
+    /* Initialize semaphores. */
+    sema_rd = sem_open(LSCOV_SEMA_RD_NAME, 0, 0644, 0);
+    if (sema_rd == (void *)-1) 
+      PFATAL("sem_open() for sema_rd failed");
+
+    sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
+    if (sema_dr == (void *)-1) 
+      PFATAL("sem_open() for sema_dr failed");
 
     /* If the destructor was not called in the last execution (e.g., due to a
        crash), mark it finished and let the daemon do its job. This hack will
        make the daemon ignore the very last execution if it was a crash, but
        it's just only *one* execution. */
-    if (*__lscov_recstat_ptr == LSREC_REC)
-      *__lscov_recstat_ptr = LSREC_FIN;
+    int _sema_rd_val, _sema_dr_val;
+    sem_getvalue(sema_rd, &_sema_rd_val);
+    sem_getvalue(sema_dr, &_sema_dr_val);
+
+    if (!_sema_dr_val && !_sema_rd_val)
+      sem_post(sema_rd);
 
     /* Wait until SHM is ready */
-    while (*__lscov_recstat_ptr != LSREC_RDY);
+    sem_wait(sema_dr);
   }
-
-  /* Start recording */
-  *__lscov_recstat_ptr = LSREC_REC;
 }
 
 /* Finalization (per execution) */
@@ -67,5 +76,5 @@ void __lscov_init(void) {
 __attribute__((destructor(CONST_PRIO))) 
 void __lscov_fin(void) {
   /* Mark the end of recording, if there was no crash. */
-  *__lscov_recstat_ptr = LSREC_FIN;
+  sem_post(sema_rd);
 }
