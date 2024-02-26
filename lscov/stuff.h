@@ -38,10 +38,6 @@ typedef int64_t  s64;
 #define MEM_BARRIER() \
   __asm__ volatile("" ::: "memory")
 
-/* Environment variable used to pass SHM ID to the called program. */
-
-#define SHM_ENV_VAR "__LSCOV_SHM_ID"
-
 /* Logic state size: simply following MAP_SIZE in AFL. */
 
 #define LSTATE_SIZE_POW2 16
@@ -269,3 +265,8 @@ typedef uint8_t recstat_t;
 #define RECSTAT_RDY ((recstat_t)0)   // Ready for recording; SHM cleared
 #define RECSTAT_REC ((recstat_t)1)   // Now recording
 #define RECSTAT_FIN ((recstat_t)2)   // Recording finished
+
+/* SHM parameters */
+
+#define LSCOV_SHM_KEY    0xdead
+#define LSCOV_SHM_SIZE   (LSTATE_SIZE + sizeof(recstat_t))
