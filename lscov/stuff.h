@@ -258,15 +258,8 @@ typedef int64_t  s64;
 
 #define RANDOM(x) (random() % (x))
 
-/* Logic state recording status */
-
-typedef uint8_t recstat_t;
-
-#define RECSTAT_RDY ((recstat_t)0)   // Ready for recording; SHM cleared
-#define RECSTAT_REC ((recstat_t)1)   // Now recording
-#define RECSTAT_FIN ((recstat_t)2)   // Recording finished
-
 /* SHM parameters */
 
-#define LSCOV_SHM_KEY    0xdead
-#define LSCOV_SHM_SIZE   (LSTATE_SIZE + sizeof(recstat_t))
+#define LSCOV_SHM_HCOUNT_KEY    0xdead
+#define LSCOV_SHM_SEMA_RD_KEY   0xbeef
+#define LSCOV_SHM_SEMA_DR_KEY   0x1ee7
