@@ -71,16 +71,18 @@
   
   To establish a more reliable quality metric, we first note that fuzzing 
   aims to reduce the number of unknown \emph{abnormal} behaviors by observing
-  more \emph{interesting} (i.e., relating to unknown abnormal) behaviors. This
-  suggests that the number of observed interesting behaviors should directly
-  indicate how well the fuzzer achieved its aim (i.e., the quality). 
+  more \emph{interesting} (i.e., relating to unknown abnormal) behaviors. The
+  more interesting behaviors a fuzzer has observed, the stronger guarantee it
+  can provide about the absence of unknown abnormal behaviors. This suggests
+  that the number of observed interesting behaviors must directly indicate the
+  fuzzing quality. 
   
   In this work, we propose \emph{logic state coverage} as a proxy metric to
   count observed interesting behaviors. A logic state distinguishes interesting
   behaviors in a finer granularity than the less interesting ones, making the
   amount of logic state coverage (i.e., observed logic states) directly
   proportional to the number of observed interesting behaviors.
-  
+  % 
   We implemented logic state coverage using a bloom filter and reevaluated
   \textsc{FuzzBench} and indecisive-to-subjective fuzzer comparisons in
   hypervisor and grammar fuzzing. 
@@ -319,7 +321,7 @@ As the interestingness $P(\mathrm{abnormal})$ depends on the expectation of an
 \emph{unobserved} behavior, there is no direct way to measure or formalize
 interestingness. However, the practice of untargeted fuzzing in recent years
 suggests that abnormal behaviors get increasingly unlikely to require a
-large number of branch hit when it gets larger.
+larger number of branch hit.
 %
 The prime example is the branch hit count bucketing in AFL \cite{afl}, where the
 bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7, 8-15,
@@ -756,8 +758,8 @@ $\tilde{n}_e(X)$ when the number of 1s in the filter is $X$ as follows:
 \end{equation}
 
 \autoref{e:count} comes with three major benefits. First, it offers one of the
-best accuracy among all alternatives 
-\cite{harmouch2017cardinality}. 
+best accuracy among all alternatives (c.f., only 4\% error even in an extreme
+filter density of 90\%) \cite{harmouch2017cardinality}. 
 %, while its error rate is \emph{inversely proportional} to the actual number of
 %elements in the set (i.e., even \emph{less} error as logic state coverage
 %grows) \cite{harmouch2017cardinality}. 
@@ -802,8 +804,8 @@ and elaborate on details (\autoref{s:design:rec} and \ref{s:design:count}).
 measurement. Similar to edge coverage, it first records and buckets the branch
 hit counts of every execution, yielding a \emph{logic state} as a result 
 (\autoref{s:design:rec}). Then, it adds the recorded logic state to a 
-\emph{bloom filter}, representing a set of observed logic states, by setting the
-hashed indices (\autoref{s:design:up}).  Finally, the measurement periodically
+\emph{bloom filter} that represents a set of observed logic states, by setting
+the hash indices (\autoref{s:design:up}).  Finally, the measurement periodically
 reads off the bloom filter to count the number of observed logic states
 (\autoref{s:design:count}).
 
