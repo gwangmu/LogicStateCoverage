@@ -1,5 +1,6 @@
 /*
- * Executable clang wrapper with the testbed.
+ * lscov - clang wrapper
+ * ---------------------
  * 
  * Mostly based on AFL. (https://github.com/google/AFL)
  * See "llvm_mode/afl-clang-fast.c" for the original implementation.
@@ -29,10 +30,10 @@ int main(int argc, char** argv) {
   std::string basepath = exepath.substr(0, _name_pos);
 
   std::string real_exepath;
-  if (exename == "tb-clang++")
-    real_exepath = basepath + "/clang++";
+  if (exename.length() >= 2 && exename.substr(exename.length() - 2) == "++")
+    real_exepath = basepath + "/wrap-clang++";
   else
-    real_exepath = basepath + "/clang";
+    real_exepath = basepath + "/wrap-clang";
   cc_params[0] = (char*)real_exepath.c_str();
 
   std::string clang_chk = "which " + real_exepath + " >/dev/null 2>&1";
@@ -41,24 +42,13 @@ int main(int argc, char** argv) {
     abort();
   }
 
-  std::string libpath = std::string(basepath + "/libLSCovLogicState.so");
-  std::string pass_plugin = "-fpass-plugin=" + libpath;
+  std::string _libpath = std::string(basepath + "/libLSCovPass.so");
+  std::string pass_plugin = "-fpass-plugin=" + _libpath;
+  std::string rt_obj = std::string(basepath + "/libLSCovRT.a");
 
   cc_params[cc_par_cnt++] = (char*)"-Xclang";
   cc_params[cc_par_cnt++] = (char*)pass_plugin.c_str();
-  
-  // TODO: uncomment the followings if needed.
-
-  /*  - if your analysis requires explicitly typed pointers in IR. 
-  cc_params[cc_par_cnt++] = (char*)"-Xclang";
-  cc_params[cc_par_cnt++] = (char*)"-no-opaque-pointers"; */
-
-  /*  - if your analysis precludes any inlining.
-  cc_params[cc_par_cnt++] = (char*)"-Xclang";
-  cc_params[cc_par_cnt++] = (char*)"-fno-inline"; */
-
-  /*  - if your analysis needs some debugging information by default.
-  cc_params[cc_par_cnt++] = (char*)"-g"; */
+  cc_params[cc_par_cnt++] = (char*)rt_obj.c_str();
 
   while (--argc) {
     char* cur = *(++argv);

@@ -1,41 +1,51 @@
 /*
-  Copyright 2013 Google LLC All rights reserved.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at:
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-/*
-   american fuzzy lop - debug / error handling macros
-   --------------------------------------------------
-
-   Written and maintained by Michal Zalewski <lcamtuf@google.com>
-*/
-
-/*
- * lscov - debug macros 
- * --------------------
- * 
- * Blatantly stolen from AFL. (https://github.com/google/AFL)
+ * lscov - good stuff 
+ * ------------------
+ *
+ * Constants, debug macros, and stuff.
+ * Debug macros blatantly stolen from AFL. (https://github.com/google/AFL)
  * See "debug.h" in AFL for the original implementation.
  */
 
-#ifndef _HAVE_DEBUG_H
-#define _HAVE_DEBUG_H
+/* We're living in 2024 and still recommended to implement header guards
+   with 'ifndef...endif'. I'll just use 'pragma once' because I have little
+   regard to the de-jure standard (and it's no big code base anyway). */
+#pragma once
 
 #include <errno.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#include "types.h"
-#include "config.h"
+/* Version string */
+
+#define VERSION "0.01"
+
+/* Standard integer types */
+
+typedef uint8_t  u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t   s8;
+typedef int16_t  s16;
+typedef int32_t  s32;
+typedef int64_t  s64;
+
+/* Memory barrier */
+
+#define MEM_BARRIER() \
+  __asm__ volatile("" ::: "memory")
+
+/* Environment variable used to pass SHM ID to the called program. */
+
+#define SHM_ENV_VAR "__LSCOV_SHM_ID"
+
+/* Logic state size: simply following MAP_SIZE in AFL. */
+
+#define LSTATE_SIZE_POW2 16
+#define LSTATE_SIZE      (1 << LSTATE_SIZE_POW2)
 
 /*******************
  * Terminal colors *
@@ -248,19 +258,14 @@
     if (res < 0) PFATAL(x); else FATAL(x); \
   } while (0)
 
-/* Error-checking versions of read() and write() that call RPFATAL() as
-   appropriate. */
+/* Random number */
 
-#define ck_write(fd, buf, len, fn) do { \
-    u32 _len = (len); \
-    s32 _res = write(fd, buf, _len); \
-    if (_res != _len) RPFATAL(_res, "Short write to %s", fn); \
-  } while (0)
+#define RANDOM(x) (random() % (x))
 
-#define ck_read(fd, buf, len, fn) do { \
-    u32 _len = (len); \
-    s32 _res = read(fd, buf, _len); \
-    if (_res != _len) RPFATAL(_res, "Short read from %s", fn); \
-  } while (0)
+/* Logic state recording status */
 
-#endif /* ! _HAVE_DEBUG_H */
+typedef uint8_t recstat_t;
+
+#define RECSTAT_RDY ((recstat_t)0)   // Ready for recording; SHM cleared
+#define RECSTAT_REC ((recstat_t)1)   // Now recording
+#define RECSTAT_FIN ((recstat_t)2)   // Recording finished
