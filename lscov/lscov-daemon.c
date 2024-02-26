@@ -23,7 +23,7 @@
 
 /* Parameters */
 
-time_t      tallying_period = 600;          // Tallying period (in seconds) 
+time_t      tallying_period = 2;          // Tallying period (in seconds) 
 u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
 u8          num_hashes = 4;                 // Number of hashes
 const char* out_path = "lscov.out";         // Output path
@@ -48,7 +48,7 @@ void out_init() {
 
   fprintf(fout, "Time,Coverage");
   if (error_percent > 0)
-    fprintf(fout, "(Lower),(Upper)\n");
+    fprintf(fout, ",(Lower),(Upper)\n");
   else
     fprintf(fout, "\n");
 
@@ -60,7 +60,7 @@ void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
 
   fprintf(fout, "%u,%u", time, cov);
   if (error_percent > 0)
-    fprintf(fout, "%u,%u\n", lower_err, upper_err);
+    fprintf(fout, ",%u,%u\n", lower_err, upper_err);
   else
     fprintf(fout, "\n");
 
@@ -98,7 +98,24 @@ void hcount_nuke() {
   sem_post(sema_dr);
 }
 
+void hcount_stop() {
+  if (shm_hcount_id)
+    shmctl(shm_hcount_id, IPC_RMID, NULL);
+
+  if (sema_rd) {
+    sem_close(sema_rd);
+    sem_unlink(LSCOV_SEMA_RD_NAME);
+  }
+  
+  if (sema_dr) {
+    sem_close(sema_dr);
+    sem_unlink(LSCOV_SEMA_DR_NAME);
+  }
+}
+
 void hcount_init() {
+  atexit(hcount_stop);
+
   /* Initialize SHM. */
   shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 
       IPC_CREAT | IPC_EXCL | 0600);
@@ -120,14 +137,6 @@ void hcount_init() {
 
   /* Initialize 'hit_count'. */
   hcount_nuke();
-}
-
-void hcount_stop() {
-  shmctl(shm_hcount_id, IPC_RMID, NULL);
-  sem_close(sema_rd);
-  sem_close(sema_dr);
-  sem_unlink(LSCOV_SEMA_RD_NAME);
-  sem_unlink(LSCOV_SEMA_DR_NAME);
 }
 
 
@@ -241,14 +250,14 @@ void bfilter_init() {
   /* Allocate memory for a bloom filter. MAP_ANONYMOUS will automatically
    * zeroize the filter. */
   bloom_filter = mmap(0, bloom_filter_size, PROT_READ | PROT_WRITE, 
-      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (bloom_filter == MAP_FAILED)
     PFATAL("bloom filter allocation failed.");
 }
 
 
 static inline int tally_is_next_time() {
-  return (next_tallying_time > time(NULL));
+  return (next_tallying_time < time(NULL));
 }
 
 time_t tally_update_next_time() {
@@ -262,22 +271,28 @@ time_t tally_update_next_time() {
 
   u32 prev_iter_num = (next_tallying_time - start_time) / tallying_period;
   next_tallying_time = start_time + (prev_iter_num + 1) * tallying_period;
+  loop_timeout.tv_sec = next_tallying_time;
 
   return prev_next_time;
 }
 
 void tally_init() {
   start_time = time(NULL);
-  loop_timeout.tv_sec = tallying_period / 10;
   tally_update_next_time();
 }
 
 
-void lscov_report() {
+void lscov_report(int use_cur_time) {
   time_t prev_next_time = tally_update_next_time();
+  if (use_cur_time)
+    prev_next_time = time(NULL);
+
+  u32 prev_time = prev_next_time - start_time;
   u32 cov = bfilter_calc_cardinality(); 
   // TODO: calculate error bounds.
-  out_append(prev_next_time, cov, 0, 0);
+  out_append(prev_time, cov, 0, 0);
+
+  ACTF("Recorded new coverage (time: %u, cov: %u)", prev_time, cov); 
 }
 
 void lscov_loop() {
@@ -304,13 +319,15 @@ void lscov_loop() {
 
     /* Report the coverage. */
     if (tally_is_next_time()) 
-      lscov_report();
+      lscov_report(0);
   }
 }
 
 void lscov_stop(int sig) {
-  lscov_report();
-  hcount_stop();
+  lscov_report(1);
+  OKF("Terminating lscov. Good luck!");
+
+  exit(0);
 }
 
 
@@ -328,12 +345,18 @@ void sig_init() {
 
 
 int main(int argc, char** argv) {
+  ACTF("Starting lscov... (v%s)", VERSION);
+  
   /* Initialization */
   sig_init();
   out_init();
   hcount_init();
   bfilter_init();
   tally_init();
+
+  OKF("Initialization complete.");
+  ACTF("Recording... (out: %s)", out_path);
   
+  /* Looping... */
   lscov_loop();
 }
