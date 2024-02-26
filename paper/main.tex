@@ -955,6 +955,17 @@ alternative approaches can be incorporated to manage logic state coverage as it
 is not always the optimum solution.
 
 
+\pp{Semantically abnormal behaviors}
+%
+While the definition of program behaviors is separated from the output, it can
+still incorporates \emph{semantically} abnormal behaviors (i.e., semantic bugs)
+by means of exceptions. To be specific, semantic error detection such as
+semantic sanitizers \cite{kim2019hydra,yun2016apisan} may capture semantic bugs
+on the fly and make the behavior abnormal by terminating it. The definition
+allows this as exceptions reference the data context before it is revealed to
+the output.
+
+
 \section{Related Work}
 
 \pp{Reliability of conventional metrics}
