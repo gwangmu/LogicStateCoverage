@@ -225,10 +225,11 @@ void bfilter_set_1_by_index(u32 idx) {
 }
 
 u32 bfilter_calc_cardinality() {
-  /* DEBUG: Overhead measuring */
+#ifdef DEBUG
+  /* Overhead measuring */
   struct timespec t1, t2;
   clock_gettime(CLOCK_MONOTONIC, &t1);
-  /* DEBUG */
+#endif
 
   /* Tally 1s in the filter. */
   u32 num_1s = 0;
@@ -254,12 +255,13 @@ u32 bfilter_calc_cardinality() {
   double dividend = log(1.0 - (double)num_1s/(bloom_filter_size << 3));
   u32 cov = (u32)(dividend / divisor);
 
-  /* DEBUG: Overhead measuring */
+#ifdef DEBUG
+  /* Overhead measuring */
   clock_gettime(CLOCK_MONOTONIC, &t2);
-  ACTF("Calculation time: %.5f", 
+  ACTF("Cardinality calculation time: %.5f", 
       ((double)t2.tv_sec + 1.0e-9 * t2.tv_nsec) - 
       ((double)t1.tv_sec + 1.0e-9 * t1.tv_nsec)); 
-  /* DEBUG */
+#endif
 
   return cov;
 }
