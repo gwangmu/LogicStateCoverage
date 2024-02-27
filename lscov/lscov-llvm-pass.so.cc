@@ -21,12 +21,12 @@
 
 using namespace llvm;
 
-class IRTestbed : public PassInfoMixin<IRTestbed> {
+class LSCovPass : public PassInfoMixin<LSCovPass> {
 public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
 };
 
-PreservedAnalyses IRTestbed::run(Module &M, ModuleAnalysisManager &MAM) {
+PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
   LLVMContext &C = M.getContext();
 
   IntegerType *Int8Ty  = IntegerType::getInt8Ty(C);
@@ -92,11 +92,11 @@ PreservedAnalyses IRTestbed::run(Module &M, ModuleAnalysisManager &MAM) {
 
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK
 llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "IRTestbed", "v0.0",
+  return {LLVM_PLUGIN_API_VERSION, "LSCovPass", "v0.0",
     [](PassBuilder &PB) {
       PB.registerOptimizerLastEPCallback(
         [](ModulePassManager &MPM, OptimizationLevel OL) {
-          MPM.addPass(IRTestbed());
+          MPM.addPass(LSCovPass());
         });
     }};
 }

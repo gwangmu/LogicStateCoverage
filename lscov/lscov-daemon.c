@@ -8,6 +8,8 @@
  * Supposed to start before (and run parallely with) a fuzzer.
  */
 
+#define USE_COLOR   // Yes, please.
+
 #include <fcntl.h>
 #include <math.h>
 #include <semaphore.h>
@@ -19,7 +21,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+
 #include "stuff.h"
+#include "emoji.h"
 
 /* Parameters */
 
@@ -292,7 +296,7 @@ void lscov_report(int use_cur_time) {
   // TODO: calculate error bounds.
   out_append(prev_time, cov, 0, 0);
 
-  ACTF("Recorded new coverage (time: %u, cov: %u)", prev_time, cov); 
+  OKF("Recorded new coverage. (time: %u, cov: %u)", prev_time, cov); 
 }
 
 void lscov_loop() {
@@ -324,8 +328,9 @@ void lscov_loop() {
 }
 
 void lscov_stop(int sig) {
+  ACTF("Terminating lscov...");
   lscov_report(1);
-  OKF("Terminating lscov. Good luck!");
+  OKF("Good luck! %s", random_goody());
 
   exit(0);
 }
