@@ -225,6 +225,11 @@ void bfilter_set_1_by_index(u32 idx) {
 }
 
 u32 bfilter_calc_cardinality() {
+  /* DEBUG: Overhead measuring */
+  struct timespec t1, t2;
+  clock_gettime(CLOCK_MONOTONIC, &t1);
+  /* DEBUG */
+
   /* Tally 1s in the filter. */
   u32 num_1s = 0;
 
@@ -247,7 +252,16 @@ u32 bfilter_calc_cardinality() {
 
   // FIXME: replacing 'log' with a faster one?
   double dividend = log(1.0 - (double)num_1s/(bloom_filter_size << 3));
-  return (u32)(dividend / divisor);
+  u32 cov = (u32)(dividend / divisor);
+
+  /* DEBUG: Overhead measuring */
+  clock_gettime(CLOCK_MONOTONIC, &t2);
+  ACTF("Calculation time: %.5f", 
+      ((double)t2.tv_sec + 1.0e-9 * t2.tv_nsec) - 
+      ((double)t1.tv_sec + 1.0e-9 * t1.tv_nsec)); 
+  /* DEBUG */
+
+  return cov;
 }
 
 void bfilter_init() {
@@ -330,7 +344,7 @@ void lscov_loop() {
 void lscov_stop(int sig) {
   ACTF("Terminating lscov...");
   lscov_report(1);
-  OKF("Good luck! %s", random_goody());
+  OKF("Good luck! %s", random_emoji());
 
   exit(0);
 }

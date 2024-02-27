@@ -7,15 +7,12 @@
  */
 
 #pragma once
-
 #include <time.h>
 
 static const char* emoji[] = {
   "( •_•)O*¯`·.¸.·´¯`°Q(•_• )",
   "ʕ •́؈•̀)",
-  "(☝ ՞ਊ ՞)☝",
   "O=('-'Q)",
-  "t(ಠ益ಠt)",
   "(ノಠ益ಠ)ノ彡┻━┻",
   "(=^･ｪ･^=))ﾉ彡☆",
   "ò_ô",
@@ -77,6 +74,6 @@ static const char* emoji[] = {
   "⊂(◉‿◉)つ",
 };
 
-static const char* random_goody() { 
+static const char* random_emoji() { 
   return emoji[time(NULL) % (sizeof(emoji)/sizeof(const char *))];
 }
