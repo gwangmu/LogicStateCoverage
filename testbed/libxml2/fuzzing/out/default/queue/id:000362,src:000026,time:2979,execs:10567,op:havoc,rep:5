@@ -1,4 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newl–ne "&#x26;#160;&#160;&#160;&#160;&xA;">
-]>
-<tûst  newline="&newlige;"/>

@@ -1,4 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY new::::::::::::::::::::::::::line "&#x26;#x
-]>
-<tline="westne&newline;"/>#

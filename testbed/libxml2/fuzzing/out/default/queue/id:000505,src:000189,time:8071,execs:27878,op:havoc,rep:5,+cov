@@ -1,4 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY gewline " #x26;#xA;"33333>
-]!EY newline "&#xx>
-<test newline="&newline;"/>.0" encoding="ISO#

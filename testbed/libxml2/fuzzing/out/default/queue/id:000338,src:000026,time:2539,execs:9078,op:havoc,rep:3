@@ -1,5 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "&#x26;#x test [
-  <!ENTITY newlA;">
-]>
-<tSst newline="&lewline;"/>

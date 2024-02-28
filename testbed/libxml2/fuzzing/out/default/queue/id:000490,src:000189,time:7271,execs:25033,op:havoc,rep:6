@@ -1,6 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "&#x22122222222222226;#xA;">
-]>
-<test newline="&nB6;#xA;">
-]>
-<test nVwline="&nee2222222222226;#xAwlin_;"/>#

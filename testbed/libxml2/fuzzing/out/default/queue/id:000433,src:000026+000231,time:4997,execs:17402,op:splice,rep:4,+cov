@@ -1,5 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "&#x26;#xA;">
-]>
-<test newline="&n<!DOCTYPE ‹est[ß    YPOCTYPE tes’³³³²³ñ³³NTIline;"/>
-E tpstÿÿ     <!eeeee

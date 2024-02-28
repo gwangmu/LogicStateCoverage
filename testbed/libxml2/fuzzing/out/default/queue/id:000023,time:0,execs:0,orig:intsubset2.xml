@@ -98,7 +98,7 @@
 	-->
 <!ELEMENT variant (#PCDATA)>
 	<!-- 
-	A cross-reference code to another kanji, usually regarded as a variant.
+	A cross-reference codeded as a variant.
 	The type of cross-reference is given in the var_type attribute.
 	-->
 <!ATTLIST variant var_type CDATA #REQUIRED>

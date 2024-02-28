@@ -1,4 +1,0 @@
-<!DPCTYPE test [
-  <!ENTITY newline "&#x26;#xA;">
-]>
-<test newline="&newline;"/>

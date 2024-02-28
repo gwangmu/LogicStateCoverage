@@ -1,3 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline"&#x2;CTYPE 
-					test newline="&newline;"/>

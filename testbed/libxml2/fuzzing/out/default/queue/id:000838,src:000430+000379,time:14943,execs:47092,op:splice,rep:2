@@ -1,8 +1,0 @@
-<:>
-]>
-<t<!DOCTYPE test [
-  <!ENTITY newline "&#x26;#xA@&>
-e "&#xe;"/>
-<test newline="&n]>
-line "&#xe;"/>
-<test newline="&new

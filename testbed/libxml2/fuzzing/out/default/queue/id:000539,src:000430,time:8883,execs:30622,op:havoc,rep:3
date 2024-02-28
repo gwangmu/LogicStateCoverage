@@ -1,8 +1,0 @@
-<:>
-]>
-<test newlines^ [
-  <!ENTITY neline 2;xA;">
-]>
-etest newline="&n<!DOCTYPE test[ßE test[ß    YPEßtpst[ nelin< 2;xA;">
-]>
-<t<!eeeee

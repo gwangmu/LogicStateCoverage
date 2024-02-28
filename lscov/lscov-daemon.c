@@ -31,7 +31,7 @@ time_t      tallying_period = 10;           // Tallying period (in seconds)
 u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
 u8          num_hashes = 4;                 // Number of hashes
 const char* out_path = "lscov.csv";         // Output path
-u8          error_percent = 95;             // Error bound (0: disabled)
+u8          error_percent = 0;              // Error bound (0: disabled)
 
 /* State variables */
 
@@ -78,7 +78,7 @@ static inline int hcount_wait_until_ready() {
 }
 
 void hcount_bucket_to_lstate(u8* lstate) {
-  /* The bucket numbers are one-hot-encoded. In other words, Bucket 3 is encoded
+  /* The bucket numbers are one-hot-encoded. For example, Bucket 3 is encoded
    * as 0x04 (0b00000100). Hit count 0 goes to Bucket 0. Anything else will go
    * to Bucket [log_2(hit_count)] + 1, which is the previous power-of-2 integer
    * interpreted as a one-hot-encoded bit vector. */
@@ -212,7 +212,7 @@ u32 bfilter_get_hash_index(const u8 *lstate, u32 seed) {
   h *= 0xc2b2ae35;
   h ^= (h >> 16);
 
-  return h % len;
+  return h % (bloom_filter_size << 3);
 }
 
 void bfilter_set_1_by_index(u32 idx) {
@@ -226,7 +226,7 @@ void bfilter_set_1_by_index(u32 idx) {
   bloom_filter[byte_idx] |= (1 << bit_idx);
 }
 
-u32 bfilter_calc_cardinality() {
+u32 bfilter_calc_cardinality(u32 *_num_1s) {
 #ifdef DEBUG_CARDINALITY_TIME
   /* Overhead measuring */
   struct timespec t1, t2;
@@ -243,6 +243,9 @@ u32 bfilter_calc_cardinality() {
       _byte >>= 1;
     }
   }
+
+  if (_num_1s)
+    *_num_1s = num_1s;
 
   /* Estimate cardinality. */
   static int has_divisor = 0;
@@ -314,12 +317,13 @@ void lscov_report(int use_cur_time) {
   if (use_cur_time)
     prev_next_time = time(NULL);
 
+  u32 num_1s;
   u32 prev_time = prev_next_time - start_time;
-  u32 cov = bfilter_calc_cardinality(); 
+  u32 cov = bfilter_calc_cardinality(&num_1s); 
   // TODO: calculate error bounds.
   out_append(prev_time, cov, 0, 0);
 
-  OKF("Recorded new coverage. (time: %u, cov: %u)", prev_time, cov); 
+  OKF("Recorded new coverage. (time: %u, cov: %u, num_1s: %u)", prev_time, cov, num_1s); 
 }
 
 void lscov_wait() {

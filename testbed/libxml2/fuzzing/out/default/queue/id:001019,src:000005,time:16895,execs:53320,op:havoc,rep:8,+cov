@@ -1,16 +1,0 @@
-<?xml versio‘="1.0"?>
-<!DOCTYPE d [
-    <!ENTITY a "]>">
-    <!ENTITY b ']>'>
-    <!ENTITY b ']>'>
-  <!-->1?>
-<!--> c1 -->
-<d[ß    QPE||||||ta]]>
-<?pi p2?|||||||||| a=">" b=4>'>
-text&a;text
-<![CDATA[cdata]]>
-<?pi p2?>
-<!--> c2&-->
-</d>
-<?pi p3?>
-<!--> cí -->

@@ -1,4 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "<!ENTITY n&#x26;#x\;">
-]>
-<test newlin!e="&newline;"/>

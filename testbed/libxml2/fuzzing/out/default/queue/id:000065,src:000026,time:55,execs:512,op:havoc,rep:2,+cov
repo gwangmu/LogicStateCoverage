@@ -1,4 +1,0 @@
-<!DO8TYPE test [
-  <!ENTITY newline "&#x26;#pA;">
-]>
-<test newline="&newline;"/>

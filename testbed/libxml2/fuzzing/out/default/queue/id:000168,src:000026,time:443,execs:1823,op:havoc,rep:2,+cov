@@ -1,6 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "&#x26;#xA;">
-]>
-<uest newline="&ne">
-]>
-<test newlwline;"/>

@@ -1,4 +1,0 @@
-<!DOCTYPE ƒest [
-  <!ENTITY newli.e "&#x26;#xA;
-]5
-<test newlinine="&newline;"/>

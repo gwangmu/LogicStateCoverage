@@ -1,28 +1,0 @@
-<?xml version="1.0"?>
-<!DOCTYPE d [
-    <!ENTITY a "]>"='>'>
-    <!--> ]> -->
-] "1.0"<?pi p1>
-    <!ENTITY b ']>'>
-text&a;text
-<![CDATA[cdata]]><?xml version="1.0"?>
-<!DOCTY
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<test newline="&PE d [
-    <!ENTITY a "]>">
-    <!ENTITY b ']>'>
-  
-    <!ENTITY

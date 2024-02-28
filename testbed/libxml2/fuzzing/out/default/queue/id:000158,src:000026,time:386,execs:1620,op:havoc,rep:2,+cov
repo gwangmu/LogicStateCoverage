@@ -1,6 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline 
-Ptest new;">
-]>
-<test<!DOCTYPE test [
- newline="&newline;"/>

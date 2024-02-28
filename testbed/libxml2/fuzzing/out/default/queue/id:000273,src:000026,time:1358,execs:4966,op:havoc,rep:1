@@ -1,6 +1,0 @@
-<!DOCTYPE test [
-  <!ENTITY newline "&#x26;6">
-	<c8c:Ele
-		xmlns:c#xA;">
-]>
-<test newline="&newline;"/>

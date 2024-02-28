@@ -1,4 +1,0 @@
-<!DOCTYPE tePt [
-  <!ENTITY newline "&#x26;cxA;">
-]>
-<test newline="&newline;"/>
