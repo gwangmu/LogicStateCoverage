@@ -6,6 +6,8 @@
  * See "llvm_mode/afl-llvm-pass.so.cc" for the original implementation.
  */
 
+#define USE_COLOR     // Yes, please.
+
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/Module.h"
@@ -34,7 +36,7 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
   IntegerType *Int32Ty = IntegerType::getInt32Ty(C);
 
   /* Show a banner */
-  SAYF(cCYA "lscov-llvm-pass " cBRI VERSION cRST " by <iss300@gmail.com>\n");
+  //SAYF(cCYA "lscov-llvm-pass " cBRI VERSION cRST " by <iss300@gmail.com>\n");
 
   /* Get globals for the SHM region and the previous location */
   GlobalVariable *LSCovMapPtr = new GlobalVariable(
@@ -85,7 +87,7 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
 
   /* Say something nice */
   if (!inst_blocks) WARNF("No instrumentation targets found.");
-  else OKF("Instrumented %u locations.", inst_blocks);
+  else OKF("(lscov) Instrumented %u locations.", inst_blocks);
 
   return PreservedAnalyses::all();
 }
