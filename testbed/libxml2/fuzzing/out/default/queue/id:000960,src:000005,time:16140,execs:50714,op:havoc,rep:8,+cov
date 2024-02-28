@@ -1,0 +1,19 @@
+<?xml version="1.0"?><!DOCTYPE d [
+    <!EMTITY a "]>">
+    <!ENTITY b ']>'>
+    <!--> [cdata]]>
+<?pi p2?>
+<!--]> -->
+]    >
+<?pi p1?>
+<!--> c1 --J
+<d a=">" b=' [
+  
+]>
+a;text
+<![CDATA[cdat e]>
+<?pi p2?>
+<!--> c2 -->
+</d>
+<?pi3p3?>
+<!--> cÿ -->

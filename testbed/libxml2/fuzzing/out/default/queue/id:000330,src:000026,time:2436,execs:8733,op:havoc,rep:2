@@ -1,0 +1,6 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x2PE 
+			nG "&#		e="&ne#xA;">
+]>6;#xA;">
+]>
+<test nmwline="&newline;"/>

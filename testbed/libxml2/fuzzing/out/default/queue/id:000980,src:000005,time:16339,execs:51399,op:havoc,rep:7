@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE d[
+ %%%%%%%%%%%%   <!ENTITY a "])>
+    <!ENTITY b ']>'>
+    <!--> ]> -->
+]                  Y a "])>        ->
+<d a=">" b='>'>
+text&a;text
+<![CDA?pi p2ta]]>
+<TA[cda?>
+<!--> c2 -->
+</d>
+<?pi p3?>
+<!--> c3 -->

@@ -1,0 +1,4 @@
+<!DOCTYPEýtess [
+  <!ENTITY newline "&#s26;#xA;">
+]>
+<test newl‡ne="&newliee;"//////+

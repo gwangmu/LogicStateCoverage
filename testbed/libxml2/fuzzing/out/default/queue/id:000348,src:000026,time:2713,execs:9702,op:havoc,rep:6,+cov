@@ -1,0 +1,5 @@
+<!DOCTYPE test [
+  <!ENTITY nawli:CTYPE test [
+  <!ENTõ]!ENTITY newline>
+]>
+<test newl_ne="&newline;"/Á

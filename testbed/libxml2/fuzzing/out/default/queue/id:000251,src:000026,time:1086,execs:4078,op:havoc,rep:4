@@ -1,0 +1,3 @@
+<!DOCTYPE test [
+  <!ENTITY newl "&#x26;#xA
+  <!ENTITY aaa newline="&newline;;#NTI/>

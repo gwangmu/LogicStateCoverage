@@ -1,0 +1,4 @@
+<!DOCTYPE tes‹ [
+  <!ENTITY newline "&#x26;#xA;>ØSÝ>ØS">
+]>
+<test newline="&newline;"/>

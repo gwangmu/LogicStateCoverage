@@ -1,0 +1,4 @@
+<!DOCTYPE 26;#xAine="nTwli†test [
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&newline;"/>

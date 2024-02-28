@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&n<!DOa4 CDATA #IMCTYPE test[ß    YPE tpst[ß    YPE tpst[st[      <!eeeee

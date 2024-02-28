@@ -1,0 +1,11 @@
+<:>
+]>
+<test newline="&nDOCTline 2;xA;">
+]>
+<YPE tes^ [
+  <!ENTITY n line 2;xA;">
+]>
+<test newline="&n<"1.0"?>
+<!-- document start -t[  3   TITY neline 2;xA;">
+]>
+<t<!eeeee

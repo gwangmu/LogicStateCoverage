@@ -1,0 +1,9 @@
+<:>
+]>
+<test newline="&nDOCTYPE tes^ [
+  <!ENTITY neline 2;xA;">
+]>
+<test newline="&‘<!DOCTYPE test[ß    YPEßtpst[  3   "&‘<!DOT-1"?>
+<!DOCTYPE  somedoITY neline 2;xA;">
+]>
+<t<!eeeee

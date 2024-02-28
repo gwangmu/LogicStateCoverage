@@ -1,0 +1,2 @@
+<!DOCTYPE test [
+  <!ENTITY newlineTITY aa "&#x26;FxA;">12345678901234567890123Uit                     *n"&newline;"/>

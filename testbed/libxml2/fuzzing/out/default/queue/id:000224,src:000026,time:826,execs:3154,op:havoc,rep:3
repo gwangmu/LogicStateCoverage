@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITYAnewline "&#x26;#xA;">
+]>
+<test newlioe="&newline;Ý/>

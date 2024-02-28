@@ -1,0 +1,5 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&nc.oate '29-May-19Ÿ 
+<nt def="NT-simpline;"Ð>

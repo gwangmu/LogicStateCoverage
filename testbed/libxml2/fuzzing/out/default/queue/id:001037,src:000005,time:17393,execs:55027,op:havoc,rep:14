@@ -1,0 +1,21 @@
+<?xmnENTITY newline "&#x26;#26;#"1.0"?>
+<!DOCTYPE d [
+    <!ENTITY X "a>">
+
+    <!ENTITY a "]>">
+        <!ENTITY	b ']>'>
+    <!--> ]> -->
+]    >
+<?pi p1?>
+<!--> c1 -->
+<èa=">" b=&newl'>'>
+text&a;tex
+<èa="1.DOCTYAEÿes^ [
+  <!ENTITY0"?>
+<!DOCTYPE d [
+    <!ENTIT>" b='>'a]]>
+<?pi p21>
+<!--> c2 -->
+</d>
+<api p3?>
+<!--> c3 -->

@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&n<!DOCTYPE test[ß    YPE tpst[eeeeeeeeeeeeee

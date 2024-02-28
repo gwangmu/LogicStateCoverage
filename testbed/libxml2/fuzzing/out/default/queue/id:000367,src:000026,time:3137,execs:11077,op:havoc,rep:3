@@ -1,0 +1,4 @@
+<!DOCTYPE testywyyy [
+  <!ENTITY newline "&#x26;A;">
+]>
+<test newlwline="&newline;"/>

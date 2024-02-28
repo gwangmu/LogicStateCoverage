@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPEd  [
+    <!ENTITY b "g>">
+	   <!ENTITY b ']>'>
+    <!-->]> -->
+]    >
+ÿpi p1?>
+<!--> c1 -->
+d a=">" b='>'>
+texA;">
+]>
+<!ENTITYtest newlane="&nxt&a;text
+<![CDATA[cdata]]>
+<?pi p2?>
+<!--> c2 -->
+</d>
+<?pi p3?>
+<!--> c3 -->

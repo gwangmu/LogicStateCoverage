@@ -1,0 +1,10 @@
+<?xml version="1.0"?„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„„ d [
+    <!ENTITY a st newline="&->
+]    >
+<?pi p1?>
+<!--> c1 -->
+<d a=">" b='>'>
+text%a;‘ext
+<!FCDATA[cdata]]>
+<?pi p2?>
+<!--> c2 >

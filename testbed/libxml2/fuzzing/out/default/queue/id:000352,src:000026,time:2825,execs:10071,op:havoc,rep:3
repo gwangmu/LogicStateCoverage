@@ -1,0 +1,3 @@
+<!DOCTYPE test€_
+  <!ENTITY newline "&ªªªªªªªªªªªªªª
+<test newline="&newline;"/>

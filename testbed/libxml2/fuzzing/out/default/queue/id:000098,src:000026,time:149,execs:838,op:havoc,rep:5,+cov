@@ -1,0 +1,7 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#•
+  <!ENTITY 26;#xA;>
+]>
+<testnewliÿe="&newline">
+]>
+<testnewliÿe="&newline;"/>

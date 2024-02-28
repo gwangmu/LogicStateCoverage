@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE d [
+    <!ENTITY a "]>">
+    <!ENTITY b ']>'>
+  
+    <!ENTITY b ']>'>
+    <!-  <!--> ]> --E test [
+  T elem xmln<!ENT?>
+<!--> c1 -->
+<d a=">
+<!--> c2 -->> cext
+<![CDATA[cdatal]]>
+<?pi p2?>
+<!--> c2 -->
+> c2 -->
+</d>
+
+<!-P> c3 -->

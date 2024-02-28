@@ -1,0 +1,28 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#X26;#x3;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]>
+<teQt n_wline="&newline;"/>#

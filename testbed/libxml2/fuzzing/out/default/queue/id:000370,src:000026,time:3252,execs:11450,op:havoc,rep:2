@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITY necline "&#x266666;">
+]>
+<test newline="&newline;"/>

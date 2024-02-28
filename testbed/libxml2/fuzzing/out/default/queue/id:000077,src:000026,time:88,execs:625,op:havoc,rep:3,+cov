@@ -1,0 +1,6 @@
+<!DOCTYPE test [
+  <!ENT'TY newline "&#x26;#xA;">
+]>
+<test newlinf"&#x26;#xA;">
+]>
+<tes="&newline;"/>

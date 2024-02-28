@@ -1,0 +1,13 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#‘A;">
+
+
+
+
+
+
+
+
+
+
+ewline="&newline;"/>

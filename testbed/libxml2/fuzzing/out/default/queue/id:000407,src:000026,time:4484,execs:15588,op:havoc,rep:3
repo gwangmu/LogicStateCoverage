@@ -1,0 +1,5 @@
+<!DOCTYPE test [
+  <!ENTITY newjine "&#x26;#xA;">
+]>
+<test new>
+<test newlinline="&newline;!/>

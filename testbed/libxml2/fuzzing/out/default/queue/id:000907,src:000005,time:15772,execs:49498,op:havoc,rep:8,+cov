@@ -1,0 +1,19 @@
+<?xmltest newline="&n
+<!DOCTYPE ?pi p1?>
+<!--> c1 -->
+<d a="d [
+    <newli|e "&x2>
+<t""t newlin"""""""	>
+    <!--> ]> -->
+]    >
+<?pi p1?>
+<!--> c1 -->
+<d a=">" b='>'>
+text&a;text
+<![CDATA[cdata]]C
+<?pi p2?>
+<TY newli|e "&x2>
+<test newline!--> c2 -->
+</d>
+<?pi p3?>
+<!--> c3 -->

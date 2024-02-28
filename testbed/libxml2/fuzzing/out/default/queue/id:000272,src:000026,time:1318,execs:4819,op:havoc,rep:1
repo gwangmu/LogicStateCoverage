@@ -1,0 +1,4 @@
+<!DOCTYPE tesli[
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&newt ne;"/>

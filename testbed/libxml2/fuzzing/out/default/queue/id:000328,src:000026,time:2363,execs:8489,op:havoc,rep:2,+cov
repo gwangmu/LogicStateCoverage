@@ -1,0 +1,5 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x2=;#xA;">
+]>
+<test newline="&nene;
+]><test liNiiii#xwline;"/>

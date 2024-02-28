@@ -1,0 +1,8 @@
+<:>
+]>
+<t<!DOCTYPE test [
+  <!YP.text
+<![CDATENTITY newlin` "&#x26;#xA;&>
+]>
+line "&#xe;"/>
+<test newline="&new

@@ -1,0 +1,4 @@
+<!DOCTYPE tcst [
+  <!ENTITY newline "&#x26;#x|;">
+]>
+<testßnewf>

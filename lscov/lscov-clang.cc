@@ -45,6 +45,7 @@ int main(int argc, char** argv) {
   std::string _libpath = std::string(basepath + "/libLSCovPass.so");
   std::string pass_plugin = "-fpass-plugin=" + _libpath;
   std::string rt_obj = std::string(basepath + "/libLSCovRT.a");
+  //std::string rt_obj = std::string(basepath + "/CMakeFiles/LSCovRT.dir/lscov-llvm-rt.a.c.o");
 
   while (--argc) {
     char* cur = *(++argv);

@@ -1,0 +1,4 @@
+ÿÿCTYPE test [
+  <!ENTITY n<foo/ewline "&#x26;#xA;">
+]>
+<testCnewline="&nawline;"/>

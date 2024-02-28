@@ -227,7 +227,7 @@ void bfilter_set_1_by_index(u32 idx) {
 }
 
 u32 bfilter_calc_cardinality() {
-#ifdef DEBUG
+#ifdef DEBUG_CARDINALITY_TIME
   /* Overhead measuring */
   struct timespec t1, t2;
   clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -257,7 +257,7 @@ u32 bfilter_calc_cardinality() {
   double dividend = log(1.0 - (double)num_1s/(bloom_filter_size << 3));
   u32 cov = (u32)(dividend / divisor);
 
-#ifdef DEBUG
+#ifdef DEBUG_CARDINALITY_TIME
   /* Overhead measuring */
   clock_gettime(CLOCK_MONOTONIC, &t2);
   ACTF("Cardinality calculation time: %.5f", 
@@ -327,7 +327,7 @@ void lscov_wait() {
    * We just busy-wait here because nobody is using computation resource in a
    * meaningful way at this point (and it's cheap for the instrumented binary
    * to do every execution) */
-  while (*((u32 *)hit_counts) != 0xbadcaffe)
+  while (*hit_counts != 0xff)
     continue;
 }
 
@@ -337,6 +337,9 @@ void lscov_loop() {
 
     /* Update the filter. */
     if (!sem_rd_ret) {
+#ifdef DEBUG_RECEIVE_HCOUNT
+      ACTF("Received new hit counts.");
+#endif
       /* Bucketize the hit counts, making a logic state. */
       static u8* lstate;
       if (!lstate)

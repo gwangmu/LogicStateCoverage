@@ -1,0 +1,15 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#xA;">
+]>
+<test newline="&n<!DOCTYPE test[ß
+
+
+
+
+]ç#x26;#xA;">
+
+
+
+
+
+eeeee

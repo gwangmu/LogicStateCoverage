@@ -1,0 +1,3 @@
+<!DOCTYPE test [ðŸ¦ð’
+  <!ENTITY newline "&#x26;#xA ">
+]><test newline="&newline;"/>

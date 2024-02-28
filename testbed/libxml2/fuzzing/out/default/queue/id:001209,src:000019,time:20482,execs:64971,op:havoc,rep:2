@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8
+
+&a; should appear afmedoc [
+  <!ENTITY a   "something">
+  <!ENTITY b   "&a;">
+]>
+
+<somedoc>
+
+<somebeacon someattribute="&b;"/>859-1"?>
+<!DOCTYPE  soter colon: &a;
+&b; should appear after colon: &a;
+&a; should appeÿ after colon: &b;
+&b; should appear after colon: &b;
+
+</somedoc>

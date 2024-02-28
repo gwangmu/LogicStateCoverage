@@ -5,8 +5,9 @@ export AFL_USE_ASAN
 export AFL_USE_UBSAN
 
 all:
-	$(CC) main.c #-o3 -c -emit-llvm -o main.bc
-	#llvm-dis main.bc
+	#$(CC) main.c 
+	AFL_PATH=$(AFL_PATH) $(CC) main.c -c -emit-llvm -o main.bc
+	llvm-dis main.bc
 
 clean:
 	rm -f main.bc main.ll a.out

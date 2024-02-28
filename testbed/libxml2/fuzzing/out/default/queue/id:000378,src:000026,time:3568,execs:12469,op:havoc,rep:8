@@ -1,0 +1,5 @@
+<!DOCTYPE test [
+  <!ENTITY newliSe "&E_26;<!D#xA 8 "&#x€6;#"&#x>
+;">
+]>
+<tes€ newline="&newline;"/>

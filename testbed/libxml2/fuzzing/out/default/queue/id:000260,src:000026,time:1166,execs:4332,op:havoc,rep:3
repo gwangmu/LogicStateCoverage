@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#€А6;#xA;">
+]>
+<test newline="ннннннн&newline;"/=с

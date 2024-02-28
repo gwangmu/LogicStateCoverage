@@ -1,0 +1,4 @@
+<!DOCTYPE test [
+  <!ENTITY newline "&#x26;#xA;">  <!ENTITY newline "&#x26;#x
+]>
+<test new[ine="line;"/>#

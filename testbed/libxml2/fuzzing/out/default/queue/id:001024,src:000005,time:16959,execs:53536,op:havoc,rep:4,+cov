@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE d [
+    <!ENTITY q "]>">
+    <!ENTITY b ']>'>
+    <!--> ]]>
+<Žest newlineIne="&Qewline;1 -->
+<d a=">" b='>'>
+text&a;text
+<![CDATA[cdata]]>
+<?pi p2!ENTITY ne?>
+<!--> c2 -->
+</d>
+<?pi p3?>
+<5--> c3 -->

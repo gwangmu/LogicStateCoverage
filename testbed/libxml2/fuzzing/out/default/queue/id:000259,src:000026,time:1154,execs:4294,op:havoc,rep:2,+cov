@@ -1,0 +1,4 @@
+<!D牛牛牛牛牛牛�OCTYPE test [
+  <!ENTITY newline "&#x26S#xA;">
+]>
+<test newline="&newline;"/>

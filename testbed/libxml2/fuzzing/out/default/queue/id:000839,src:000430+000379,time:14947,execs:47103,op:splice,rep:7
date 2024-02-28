@@ -1,0 +1,4 @@
+<:>
+]>
+<t<!DOCTYPE test [
+  <!ENTITY newline "&#x26J"xA;&>line "&#xe;"/>t<testŸline "&#xe;"/>t<test nZwline="&new

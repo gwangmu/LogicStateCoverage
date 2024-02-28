@@ -77,7 +77,7 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
       /* Load SHM pointer */
       LoadInst *MapPtr = IRB.CreateLoad(Int8PtrTy, LSCovMapPtr);
       MapPtr->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
-      Value *MapPtrIdx = IRB.CreateGEP(Int8PtrTy, MapPtr, 
+      Value *MapPtrIdx = IRB.CreateGEP(Int8Ty, MapPtr, 
           IRB.CreateXor(PrevLocCasted, CurLoc));
 
       /* Update bitmap */
