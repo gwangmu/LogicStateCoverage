@@ -50,7 +50,18 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
   int inst_blocks = 0;
 
   for (auto &F : M) {
+    /* Dirty hack: if this function has anything to do with 'sancov', ignore. */
+    if (F.getName().contains("sancov"))
+      continue;
+
     for (auto &BB : F) {
+      /* Skip this basic block if it terminates with an unconditional branch. */
+      Instruction *TermI= BB.getTerminator();
+      BranchInst *TermBrI= TermI ? dyn_cast<BranchInst>(TermI) : nullptr;
+      
+      if (TermBrI&& TermBrI->isUnconditional())
+        continue;
+
       BasicBlock::iterator IP = BB.getFirstInsertionPt();
       IRBuilder<> IRB(&(*IP));
 
@@ -87,7 +98,7 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
 
   /* Say something nice */
   if (!inst_blocks) WARNF("No instrumentation targets found.");
-  else OKF("(lscov) Instrumented %u locations.", inst_blocks);
+  else OKF("Instrumented %u locations (lscov, ignoring SANCOV).", inst_blocks);
 
   return PreservedAnalyses::all();
 }

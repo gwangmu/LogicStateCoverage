@@ -8,7 +8,7 @@
  * Supposed to start before (and run parallely with) a fuzzer.
  */
 
-#define USE_COLOR   // Yes, please.
+#define USE_COLOR     // Yes, please.
 
 #include <fcntl.h>
 #include <math.h>
@@ -27,22 +27,23 @@
 
 /* Parameters */
 
-time_t      tallying_period = 2;          // Tallying period (in seconds) 
+time_t      tallying_period = 2;            // Tallying period (in seconds) 
 u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
 u8          num_hashes = 4;                 // Number of hashes
-const char* out_path = "lscov.out";         // Output path
+const char* out_path = "lscov.csv";         // Output path
 u8          error_percent = 95;             // Error bound (0: disabled)
 
 /* State variables */
 
 s32         shm_hcount_id;        // (SHM) ID for 'hit_count'
 u8*         hit_counts;           // (SHM) Branch hit counts
-sem_t*      sema_rd;
-sem_t*      sema_dr;
+sem_t*      sema_rd;              // (sema) RT to daemon - "que update"
+sem_t*      sema_dr;              // (sema) daemon to RT - "que execution"
+struct timespec loop_timeout;     // 'sema_rd' semaphore timeout
+
 u8*         bloom_filter;         // Bloom filter itself
 time_t      start_time;           // Measurement start time (in unix time)
 time_t      next_tallying_time;   // Next tallying time (in unix time)
-struct timespec loop_timeout;
 
 
 // FIXME: bloom_filter --> limiting caching? other core?
@@ -151,6 +152,7 @@ u32 bfilter_get_hash_index(const u8 *lstate, u32 seed) {
 
   const u8 *key = lstate;
 	const u32 len = LSTATE_SIZE;
+  
   u32 c1 = 0xcc9e2d51;
   u32 c2 = 0x1b873593;
   u32 r1 = 15;
@@ -291,6 +293,8 @@ time_t tally_update_next_time() {
 
   u32 prev_iter_num = (next_tallying_time - start_time) / tallying_period;
   next_tallying_time = start_time + (prev_iter_num + 1) * tallying_period;
+
+  /* Wait at most until the next tallying time. */
   loop_timeout.tv_sec = next_tallying_time;
 
   return prev_next_time;

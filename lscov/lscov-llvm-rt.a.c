@@ -34,8 +34,7 @@ void __lscov_init(void) {
      to the appropriate region. SHM_ENV_VAR should be set in the measurement
      daemon, of course. */
 
-  s32 shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 
-      IPC_CREAT | IPC_EXCL | 0600);
+  s32 shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 0600);
 
   if (shm_hcount_id >= 0) {
     __lscov_area_ptr = (u8 *)shmat(shm_hcount_id, NULL, 0);
@@ -71,6 +70,8 @@ void __lscov_init(void) {
 
 __attribute__((destructor(CONST_PRIO))) 
 void __lscov_fin(void) {
-  /* Mark the end of recording, if there was no crash. */
-  sem_post(__lscov_sema_rd);
+  if (__lscov_sema_rd) {
+    /* Mark the end of recording, if there was no crash. */
+    sem_post(__lscov_sema_rd);
+  }
 }

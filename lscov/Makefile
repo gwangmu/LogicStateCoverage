@@ -1,14 +1,8 @@
 MAKEFLAGS += --no-print-directory
 
-ifdef LLVM_ROOT
-	LLVM_BIN_DIR = ${LLVM_ROOT}/bin
-	LLVM_LIB_DIR = ${LLVM_ROOT}/lib
-	LLVM_INCLUDE_DIR = ${LLVM_ROOT}/include
-else
-	LLVM_BIN_DIR = $(shell llvm-config --bindir)
-	LLVM_LIB_DIR = $(shell llvm-config --libdir)
-	LLVM_INCLUDE_DIR = $(shell llvm-config --includedir)
-endif
+LLVM_BIN_DIR = $(shell llvm-config --bindir)
+LLVM_LIB_DIR = $(shell llvm-config --libdir)
+LLVM_INCLUDE_DIR = $(shell llvm-config --includedir)
 
 ifdef WRAP_CC
 	WRAP_CC_PATH = ${WRAP_CC}
@@ -27,10 +21,8 @@ BUILD_DIR := ${CUR_DIR}/build
 NPROC := 1 
 
 all: ${BUILD_DIR}
-ifndef LLVM_ROOT
 ifeq (,$(shell which llvm-config))
 	$(error No llvm-config found. Install llvm or set LLVM_ROOT.)
-endif
 endif
 ifndef WRAP_CC
 	$(warning WRAP_CC_PATH undefined. Taking default clang...)

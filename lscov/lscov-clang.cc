@@ -46,15 +46,16 @@ int main(int argc, char** argv) {
   std::string pass_plugin = "-fpass-plugin=" + _libpath;
   std::string rt_obj = std::string(basepath + "/libLSCovRT.a");
 
-  cc_params[cc_par_cnt++] = (char*)"-lpthread";
   cc_params[cc_par_cnt++] = (char*)"-Xclang";
   cc_params[cc_par_cnt++] = (char*)pass_plugin.c_str();
-  cc_params[cc_par_cnt++] = (char*)rt_obj.c_str();
 
   while (--argc) {
     char* cur = *(++argv);
     cc_params[cc_par_cnt++] = cur;
   }
+
+  cc_params[cc_par_cnt++] = (char*)rt_obj.c_str();
+  cc_params[cc_par_cnt++] = (char*)"-lpthread";
   cc_params[cc_par_cnt] = NULL;
 
   execvp(cc_params[0], (char**)cc_params);
