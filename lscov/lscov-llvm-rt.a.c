@@ -63,6 +63,10 @@ void __lscov_init(void) {
 
     /* Wait until SHM is ready */
     sem_wait(__lscov_sema_dr);
+
+    /* Signal the daemon that it's gonna start execution. */
+    *((u32 *)__lscov_area_ptr) = 0xbadcaffe;
+    *((u32 *)__lscov_area_ptr) = 0;
   }
 }
 
@@ -73,5 +77,10 @@ void __lscov_fin(void) {
   if (__lscov_sema_rd) {
     /* Mark the end of recording, if there was no crash. */
     sem_post(__lscov_sema_rd);
+
+    /* Cleanup, if needed. */
+    sem_close(__lscov_sema_rd);
+    sem_close(__lscov_sema_dr);
+    shmdt(__lscov_area_ptr);
   }
 }

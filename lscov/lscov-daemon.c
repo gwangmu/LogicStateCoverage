@@ -27,7 +27,7 @@
 
 /* Parameters */
 
-time_t      tallying_period = 2;            // Tallying period (in seconds) 
+time_t      tallying_period = 10;           // Tallying period (in seconds) 
 u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
 u8          num_hashes = 4;                 // Number of hashes
 const char* out_path = "lscov.csv";         // Output path
@@ -307,6 +307,9 @@ void tally_init() {
 
 
 void lscov_report(int use_cur_time) {
+  if (!start_time)
+    return;
+
   time_t prev_next_time = tally_update_next_time();
   if (use_cur_time)
     prev_next_time = time(NULL);
@@ -317,6 +320,15 @@ void lscov_report(int use_cur_time) {
   out_append(prev_time, cov, 0, 0);
 
   OKF("Recorded new coverage. (time: %u, cov: %u)", prev_time, cov); 
+}
+
+void lscov_wait() {
+  /* Wait for the instrumented binary to report that it started.
+   * We just busy-wait here because nobody is using computation resource in a
+   * meaningful way at this point (and it's cheap for the instrumented binary
+   * to do every execution) */
+  while (*((u32 *)hit_counts) != 0xbadcaffe)
+    continue;
 }
 
 void lscov_loop() {
@@ -370,18 +382,22 @@ void sig_init() {
 
 
 int main(int argc, char** argv) {
-  ACTF("Starting lscov... (v%s)", VERSION);
+  SAYF(cCYA "lscov-daemon v" VERSION cRST " by Gwangmu Lee <iss300@gmail.com>\n");
   
   /* Initialization */
+  ACTF("Initializating...");
   sig_init();
   out_init();
   hcount_init();
   bfilter_init();
-  tally_init();
 
-  OKF("Initialization complete.");
-  ACTF("Recording... (out: %s)", out_path);
+  /* Wait until when a fuzzer starts. */
+  ACTF("Waiting for a fuzzer...");
+  lscov_wait();
+  OKF("Fuzzer started.");
   
   /* Looping... */
+  ACTF("Recording... (out: %s)", out_path);
+  tally_init();
   lscov_loop();
 }
