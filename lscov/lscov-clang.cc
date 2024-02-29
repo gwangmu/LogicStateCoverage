@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   int cc_par_cnt = 1;
 
   char _exepath[512];
-  int _len = readlink("/proc/self/exe", _exepath, sizeof(_exepath));
+  int _len = readlink("/proc/self/exe", _exepath, sizeof(_exepath)-1);
   if (_len < 0) {
     std::cerr << "fatal: fail to resolve executable path.\n";
     abort();
@@ -29,11 +29,23 @@ int main(int argc, char** argv) {
   std::string exename = exepath.substr(_name_pos + 1); 
   std::string basepath = exepath.substr(0, _name_pos);
 
-  std::string real_exepath;
+  std::string wrap_exepath;
   if (exename.length() >= 2 && exename.substr(exename.length() - 2) == "++")
-    real_exepath = basepath + "/wrap-clang++";
+    wrap_exepath = basepath + "/wrap-clang++";
   else
-    real_exepath = basepath + "/wrap-clang";
+    wrap_exepath = basepath + "/wrap-clang";
+
+  std::string real_exepath;
+
+  char _buf[1024] = {0};
+  _len = readlink(wrap_exepath.c_str(), _buf, sizeof(_buf)-1);
+  if (_len >= 0) 
+    real_exepath = std::string(_buf);
+  else {
+    std::cerr << "fatal: invalid wrapped CC/CXX path.\n";
+    abort();
+  }
+  
   cc_params[0] = (char*)real_exepath.c_str();
 
   std::string clang_chk = "which " + real_exepath + " >/dev/null 2>&1";
