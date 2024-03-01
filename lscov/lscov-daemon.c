@@ -162,7 +162,7 @@ void hcount_bucket_to_lstate(u8* lstate) {
 #endif
 
 void hcount_nuke() {
-  memset(hit_counts, 0, LSTATE_SIZE);
+  memset(hit_counts+1, 0, LSTATE_SIZE-1);
   sem_post(sema_dr);
 }
 

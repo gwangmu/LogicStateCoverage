@@ -35,6 +35,7 @@ void __lscov_fin(void) {
   if (__lscov_sema_rd) {
     /* Mark the end of recording, if there was no crash. */
     sem_post(__lscov_sema_rd);
+    (*__lscov_area_ptr)--;
   }
 }
 
@@ -57,11 +58,6 @@ void __lscov_iiiiiinit(void) {
     __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
     if (__lscov_sema_dr == (void *)-1) 
       PFATAL("sem_open() for sema_dr failed");
-
-    /* Signal the daemon that it's gonna start execution.
-     * Let's use one unlikely bit at the beginning. All logic states will have
-     * this bit, so it has zero implication for the coverage. */
-    *__lscov_area_ptr = 0x80;
   }
 }
 
@@ -76,6 +72,10 @@ void __lscov_init(void) {
   /* Same as AFL. If we're running with logic state coverage measurement, attach
      to the appropriate region. SHM_ENV_VAR should be set in the measurement
      daemon, of course. */
+  if (*__lscov_area_ptr > 0x80) {
+    sem_post(__lscov_sema_rd);
+    (*__lscov_area_ptr)--;
+  }
 
   if (__lscov_sema_rd) {
     /* If the destructor was not called in the last execution (e.g., due to a
@@ -90,5 +90,10 @@ void __lscov_init(void) {
 
     /* Wait until SHM is ready */
     sem_wait(__lscov_sema_dr);
+
+    /* Signal the daemon that it's gonna start execution.
+     * Let's use one unlikely bit at the beginning. All logic states will have
+     * this bit, so it has zero implication for the coverage. */
+    *__lscov_area_ptr = 0x81;
   }
 }
