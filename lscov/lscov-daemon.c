@@ -36,13 +36,8 @@ u8          error_percent = 0;         // Error bound (0: disabled)
 
 /* State variables */
 
-#define HCOUNT_CAP (2)
-
-s32         shm_hcounts_1_id;     // (SHM) ID for 'hit_counts' (1)
-s32         shm_hcounts_2_id;     // (SHM) ID for 'hit_counts' (2)
-u8*         hit_counts_1;         // (SHM) Branch hit counts (1)
-u8*         hit_counts_2;         // (SHM) Branch hit counts (2)
-u8*         hit_counts;           // (SHM) Branch hit counts (current)
+s32         shm_hcount_id;        // (SHM) ID for 'hit_count'
+u8*         hit_counts;           // (SHM) Branch hit counts
 sem_t*      sema_rd;              // (sema) RT to daemon - "que update"
 sem_t*      sema_dr;              // (sema) daemon to RT - "que execution"
 struct timespec loop_timeout;     // 'sema_rd' semaphore timeout
@@ -80,14 +75,53 @@ void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
 }
 
 
-static inline int hcounts_wait_until_ready() {
+static inline int hcount_wait_until_ready() {
   return sem_timedwait(sema_rd, &loop_timeout);
 }
 
-void hcounts_bucket_to_lstate(u8* lstate) {
+static const u8 count_class_lookup8[256] = {
+  [0]           = 0,
+  [1]           = 1,
+  [2 ... 3]     = 2,
+  [4 ... 7]     = 4,
+  [8 ... 15]    = 8, 
+  [16 ... 31]   = 16,
+  [32 ... 63]   = 32,
+  [64 ... 127]  = 64,
+  [128 ... 255] = 128 
+};
+
+static u16 count_class_lookup16[65536];
+
+static inline void hcount_bucket_to_lstate(u8* lstate) {
+  u32 i = LSTATE_SIZE >> 3;
+  u64 *mem = (u64 *)hit_counts;
+  u64 *dest = (u64 *)lstate;
+
+  while (i--) {
+    /* Optimize for sparse bitmaps. */
+
+    if (unlikely(*mem)) {
+      u16* mem16 = (u16*)mem;
+      u16* dest16 = (u16*)dest;
+      dest16[0] = count_class_lookup16[mem16[0]];
+      dest16[1] = count_class_lookup16[mem16[1]];
+      dest16[2] = count_class_lookup16[mem16[2]];
+      dest16[3] = count_class_lookup16[mem16[3]];
+    }
+
+    mem++;
+    dest++;
+  }
+}
+
+#if 0
+/* It was too slow. Time to steal code from AFL. */
+
+void hcount_bucket_to_lstate(u8* lstate) {
   /* The bucket numbers are one-hot-encoded. For example, Bucket 3 is encoded
-   * as 0x04 (0b00000100). Hit counts 0 goes to Bucket 0. Anything else will go
-   * to Bucket [log_2(hit_counts)] + 1, which is the previous power-of-2 integer
+   * as 0x04 (0b00000100). Hit count 0 goes to Bucket 0. Anything else will go
+   * to Bucket [log_2(hit_count)] + 1, which is the previous power-of-2 integer
    * interpreted as a one-hot-encoded bit vector. */
 
   for (int i = 0; i < LSTATE_SIZE; i++) {
@@ -104,24 +138,16 @@ void hcounts_bucket_to_lstate(u8* lstate) {
     lstate[i] = x - (x >> 1);
   }
 }
+#endif
 
-void hcounts_nuke() {
+void hcount_nuke() {
   memset(hit_counts, 0, LSTATE_SIZE);
-  if (hit_counts == hit_counts_1)
-    hit_counts = hit_counts_2;
-  else if (hit_counts == hit_counts_2) 
-    hit_counts = hit_counts_1;
-  else
-    FATAL("bogus 'hit_counts'");
   sem_post(sema_dr);
 }
 
-void hcounts_stop() {
-  if (shm_hcounts_1_id)
-    shmctl(shm_hcounts_1_id, IPC_RMID, NULL);
-
-  if (shm_hcounts_2_id)
-    shmctl(shm_hcounts_2_id, IPC_RMID, NULL);
+void hcount_stop() {
+  if (shm_hcount_id)
+    shmctl(shm_hcount_id, IPC_RMID, NULL);
 
   if (sema_rd) {
     sem_close(sema_rd);
@@ -134,40 +160,37 @@ void hcounts_stop() {
   }
 }
 
-void hcounts_init() {
-  atexit(hcounts_stop);
+void hcount_init() {
+  atexit(hcount_stop);
 
   /* Initialize SHM. */
-  shm_hcounts_1_id = shmget(LSCOV_SHM_HCOUNT_1_KEY, LSTATE_SIZE, 
+  shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 
       IPC_CREAT | IPC_EXCL | 0600);
-  if (shm_hcounts_1_id < 0) 
-    PFATAL("shmget() for hit_counts failed");
+  if (shm_hcount_id < 0) 
+    PFATAL("shmget() for hit_count failed");
 
-  hit_counts_1 = (u8 *)shmat(shm_hcounts_1_id, NULL, 0);
-  if (hit_counts_1 == (void *)-1) 
-    PFATAL("shmat() for hit_counts failed");
-
-  shm_hcounts_2_id = shmget(LSCOV_SHM_HCOUNT_2_KEY, LSTATE_SIZE, 
-      IPC_CREAT | IPC_EXCL | 0600);
-  if (shm_hcounts_2_id < 0) 
-    PFATAL("shmget() for hit_counts failed");
-
-  hit_counts_2 = (u8 *)shmat(shm_hcounts_2_id, NULL, 0);
-  if (hit_counts_2 == (void *)-1) 
-    PFATAL("shmat() for hit_counts failed");
+  hit_counts = (u8 *)shmat(shm_hcount_id, NULL, 0);
+  if (hit_counts == (void *)-1) 
+    PFATAL("shmat() for hit_count failed");
 
   /* Initialize semaphores. */
   sema_rd = sem_open(LSCOV_SEMA_RD_NAME, O_CREAT, 0644, 0);
   if (sema_rd == (void *)-1) 
     PFATAL("sem_open() for sema_rd failed");
 
-  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, HCOUNT_CAP);
+  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 0);
   if (sema_dr == (void *)-1) 
     PFATAL("sem_open() for sema_dr failed");
 
-  /* Initialize 'hit_counts'. */
-  hit_counts = hit_counts_1;
-  memset(hit_counts, 0, LSTATE_SIZE);
+  /* Initialize 'hit_count'. */
+  hcount_nuke();
+
+  /* Initialize 'count_class_lookup16' */
+  for (u32 b1 = 0; b1 < 256; b1++) 
+    for (u32 b2 = 0; b2 < 256; b2++)
+      count_class_lookup16[(b1 << 8) + b2] = 
+        (count_class_lookup8[b1] << 8) |
+        count_class_lookup8[b2];
 }
 
 
@@ -366,7 +389,7 @@ void lscov_report(int use_cur_time) {
   OKF("Recorded new coverage. (time: %u, cov: %'u)", prev_time, cov);
   
 #ifdef PRINT_STAT
-  SAYF("    density: %3.2f%%, rate: (imm) %'u ls/sec, (all) %'u ls/sec\n",
+  SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec, (avg) %'u ls/sec\n",
     (float)num_1s / bfilter_size_bits * 100,
     (u32)((cov - prev_cov) / tallying_period), 
     (u32)(cov / prev_time)); 
@@ -394,7 +417,7 @@ void sem_print_val(const char *when) {
 
 void lscov_loop() {
   while (1) {
-    int sem_rd_ret = hcounts_wait_until_ready(); 
+    int sem_rd_ret = hcount_wait_until_ready(); 
 
     /* Update the filter. */
     if (!sem_rd_ret) {
@@ -408,8 +431,8 @@ void lscov_loop() {
         lstate = mmap(0, LSTATE_SIZE, PROT_READ | PROT_WRITE, 
             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-      hcounts_bucket_to_lstate(lstate);
-      hcounts_nuke();
+      hcount_bucket_to_lstate(lstate);
+      hcount_nuke();
 
       /* Set the hash indices of the logic state to 1 in the filter. */
       for (int h = 0; h < num_hashes; h++) {
@@ -454,7 +477,7 @@ int main(int argc, char** argv) {
   lscov_init();
   sig_init();
   out_init();
-  hcounts_init();
+  hcount_init();
   bfilter_init();
 
   /* Wait until when a fuzzer starts. */

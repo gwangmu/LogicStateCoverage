@@ -19,9 +19,6 @@
 
 /* Globals for instrumentation */
 
-u8*          __lscov_area_1_ptr;
-u8*          __lscov_area_2_ptr;
-
 u8           __lscov_area_initial[LSTATE_SIZE];
 u8*          __lscov_area_ptr = __lscov_area_initial;
 __thread u32 __lscov_prev_loc;
@@ -31,6 +28,26 @@ sem_t*       __lscov_sema_dr;
 
 
 /* Initialization (per execution) */
+
+__attribute__((constructor(CONST_PRIO))) 
+void __lscov_iiiiiinit(void) {
+  s32 shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 0600);
+
+  if (shm_hcount_id >= 0) {
+    __lscov_area_ptr = (u8 *)shmat(shm_hcount_id, NULL, 0);
+    if (__lscov_area_ptr == (void *)-1) 
+      PFATAL("shmat() for hit_count failed");
+
+    /* Initialize semaphores. */
+    __lscov_sema_rd = sem_open(LSCOV_SEMA_RD_NAME, 0, 0644, 0);
+    if (__lscov_sema_rd == (void *)-1) 
+      PFATAL("sem_open() for sema_rd failed");
+
+    __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
+    if (__lscov_sema_dr == (void *)-1) 
+      PFATAL("sem_open() for sema_dr failed");
+  }
+}
 
 /* Some fuzzers (well, most of them) insert their initializer as a constuctor.
  * What's worse is that they put their initializer at the least priority,
@@ -44,29 +61,7 @@ void __lscov_init(void) {
      to the appropriate region. SHM_ENV_VAR should be set in the measurement
      daemon, of course. */
 
-  s32 shm_hcount_1_id = shmget(LSCOV_SHM_HCOUNT_1_KEY, LSTATE_SIZE, 0600);
-
-  if (shm_hcount_1_id >= 0) {
-    __lscov_area_1_ptr = (u8 *)shmat(shm_hcount_1_id, NULL, 0);
-    if (__lscov_area_1_ptr == (void *)-1) 
-      PFATAL("shmat() for hit_count failed");
-
-    s32 shm_hcount_2_id = shmget(LSCOV_SHM_HCOUNT_2_KEY, LSTATE_SIZE, 0600);
-    __lscov_area_2_ptr = (u8 *)shmat(shm_hcount_2_id, NULL, 0);
-    if (__lscov_area_2_ptr == (void *)-1) 
-      PFATAL("shmat() for hit_count failed");
-
-    __lscov_area_ptr = __lscov_area_2_ptr;
-
-    /* Initialize semaphores. */
-    __lscov_sema_rd = sem_open(LSCOV_SEMA_RD_NAME, 0, 0644, 0);
-    if (__lscov_sema_rd == (void *)-1) 
-      PFATAL("sem_open() for sema_rd failed");
-
-    __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
-    if (__lscov_sema_dr == (void *)-1) 
-      PFATAL("sem_open() for sema_dr failed");
-
+  if (__lscov_sema_rd) {
     /* If the destructor was not called in the last execution (e.g., due to a
        crash), mark it finished and let the daemon do its job. This hack will
        make the daemon ignore the very last execution if it was a crash, but
@@ -80,10 +75,6 @@ void __lscov_init(void) {
 
     /* Wait until SHM is ready */
     sem_wait(__lscov_sema_dr);
-    if (__lscov_area_ptr == __lscov_area_1_ptr)
-      __lscov_area_ptr = __lscov_area_2_ptr;
-    else /* if (__lscov_area_ptr == __lscov_area_2_ptr) */
-      __lscov_area_ptr = __lscov_area_1_ptr;
 
     /* Signal the daemon that it's gonna start execution.
      * Let's use one unlikely bit at the beginning. All logic states will have
