@@ -10,6 +10,7 @@
 
 #define USE_COLOR     // Yes, please.
 
+#include <assert.h>
 #include <fcntl.h>
 #include <locale.h>
 #include <math.h>
@@ -32,6 +33,7 @@ time_t      tallying_period = 10;      // Tallying period (in seconds)
 u32         bfilter_size = 0x4000000;  // Bloom filter size, in bytes
 u8          num_hashes = 4;            // Number of hashes
 const char* out_path = "lscov.csv";    // Output path
+const char* stat_path = "lsstat.csv";  // Statistics path
 u8          error_percent = 0;         // Error bound (0: disabled)
 
 /* State variables */
@@ -46,6 +48,7 @@ u8*         bfilter;              // Bloom filter itself
 u32         bfilter_size_bits;    // Bloom filter size, in bits
 time_t      start_time;           // Measurement start time (in unix time)
 time_t      next_tallying_time;   // Next tallying time (in unix time)
+u32         last_exec_count;
 
 
 // FIXME: bfilter --> limiting caching? other core?
@@ -62,6 +65,12 @@ void out_init() {
   fclose(fout);
 }
 
+void stat_init() {
+  FILE *fout = fopen(stat_path, "w");
+  fprintf(fout, "Time,Coverage,Density,Rate(ins),Rate(per),Rate(avg)\n");
+  fclose(fout);
+}
+
 void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
   FILE *fout = fopen(out_path, "a");
 
@@ -74,8 +83,20 @@ void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
   fclose(fout);
 }
 
+void stat_append(u32 time, u32 cov, float density, u32 rate_ins, 
+    float rate_per, u32 rate_avg) {
+  FILE *fout = fopen(stat_path, "a");
+  fprintf(fout, "%u,%u,%3.2f,%u,%3.2f,%u\n", time, cov, density,
+      rate_ins, rate_per, rate_avg);
+  fclose(fout);
+}
+
 
 static inline int hcount_wait_until_ready() {
+  int _sema_rd_val;
+  sem_getvalue(sema_rd, &_sema_rd_val);
+  if (_sema_rd_val > 1)
+    FATAL("_sema_rd_val: %d", _sema_rd_val);
   return sem_timedwait(sema_rd, &loop_timeout);
 }
 
@@ -178,12 +199,12 @@ void hcount_init() {
   if (sema_rd == (void *)-1) 
     PFATAL("sem_open() for sema_rd failed");
 
-  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 0);
+  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 1);
   if (sema_dr == (void *)-1) 
     PFATAL("sem_open() for sema_dr failed");
 
-  /* Initialize 'hit_count'. */
-  hcount_nuke();
+  /* Initialize 'hit_counts'. */
+  memset(hit_counts, 0, LSTATE_SIZE);
 
   /* Initialize 'count_class_lookup16' */
   for (u32 b1 = 0; b1 < 256; b1++) 
@@ -389,10 +410,13 @@ void lscov_report(int use_cur_time) {
   OKF("Recorded new coverage. (time: %u, cov: %'u)", prev_time, cov);
   
 #ifdef PRINT_STAT
-  SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec, (avg) %'u ls/sec\n",
-    (float)num_1s / bfilter_size_bits * 100,
-    (u32)((cov - prev_cov) / tallying_period), 
-    (u32)(cov / prev_time)); 
+  float density = (float)num_1s / bfilter_size_bits * 100;
+  u32 rate_ins = (u32)((cov - prev_cov) / tallying_period);
+  float rate_per = (float)(cov - prev_cov) / last_exec_count * 100;
+  u32 rate_avg = (u32)(cov / prev_time); 
+  SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec [%3.2f%%], (avg) %'u ls/sec\n",
+      density, rate_ins, rate_per, rate_avg);
+  stat_append(prev_time, cov, density, rate_ins, rate_per, rate_avg);
   prev_cov = cov;
 #endif
 }
@@ -402,7 +426,7 @@ void lscov_wait() {
    * We just busy-wait here because nobody is using computation resource in a
    * meaningful way at this point (and it's cheap for the instrumented binary
    * to do every execution) */
-  while (*hit_counts != 0xff)
+  while (*hit_counts != 0x80)
     continue;
 }
 
@@ -424,6 +448,7 @@ void lscov_loop() {
 #ifdef DEBUG_RECEIVE_HCOUNT
       ACTF("Received new hit counts.");
 #endif
+      last_exec_count++;
 
       /* Bucketize the hit counts, making a logic state. */
       static u8* lstate;
@@ -442,8 +467,10 @@ void lscov_loop() {
     }
 
     /* Report the coverage. */
-    if (tally_is_next_time()) 
+    if (tally_is_next_time()) {
       lscov_report(0);
+      last_exec_count = 0;
+    }
   }
 }
 
@@ -479,6 +506,10 @@ int main(int argc, char** argv) {
   out_init();
   hcount_init();
   bfilter_init();
+
+#ifdef PRINT_STAT
+  stat_init();
+#endif
 
   /* Wait until when a fuzzer starts. */
   ACTF("Waiting for a fuzzer...");

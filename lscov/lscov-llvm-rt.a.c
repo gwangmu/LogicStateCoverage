@@ -7,6 +7,7 @@
  * See "llvm_mode/afl-llvm-rt.o.c" for the reference implementation.
  */
 
+#include <assert.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -27,6 +28,16 @@ sem_t*       __lscov_sema_rd;
 sem_t*       __lscov_sema_dr;
 
 
+/* Finalization (per execution) */
+
+__attribute__((destructor(CONST_PRIO))) 
+void __lscov_fin(void) {
+  if (__lscov_sema_rd) {
+    /* Mark the end of recording, if there was no crash. */
+    sem_post(__lscov_sema_rd);
+  }
+}
+
 /* Initialization (per execution) */
 
 __attribute__((constructor(CONST_PRIO))) 
@@ -46,6 +57,11 @@ void __lscov_iiiiiinit(void) {
     __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
     if (__lscov_sema_dr == (void *)-1) 
       PFATAL("sem_open() for sema_dr failed");
+
+    /* Signal the daemon that it's gonna start execution.
+     * Let's use one unlikely bit at the beginning. All logic states will have
+     * this bit, so it has zero implication for the coverage. */
+    *__lscov_area_ptr = 0x80;
   }
 }
 
@@ -66,29 +82,13 @@ void __lscov_init(void) {
        crash), mark it finished and let the daemon do its job. This hack will
        make the daemon ignore the very last execution if it was a crash, but
        it's just only *one* execution. */
-    int _sema_rd_val, _sema_dr_val;
-    sem_getvalue(__lscov_sema_rd, &_sema_rd_val);
-    sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
 
-    if (!_sema_dr_val && !_sema_rd_val)
-      sem_post(__lscov_sema_rd);
+    int _sema_dr_val;
+    sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
+    if (_sema_dr_val > 1)
+      FATAL("_sema_dr_val: %d", _sema_dr_val);
 
     /* Wait until SHM is ready */
     sem_wait(__lscov_sema_dr);
-
-    /* Signal the daemon that it's gonna start execution.
-     * Let's use one unlikely bit at the beginning. All logic states will have
-     * this bit, so it has zero implication for the coverage. */
-    *__lscov_area_ptr = 0xff;
-  }
-}
-
-/* Finalization (per execution) */
-
-__attribute__((destructor(CONST_PRIO))) 
-void __lscov_fin(void) {
-  if (__lscov_sema_rd) {
-    /* Mark the end of recording, if there was no crash. */
-    sem_post(__lscov_sema_rd);
   }
 }
