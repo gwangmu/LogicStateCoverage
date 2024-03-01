@@ -11,6 +11,7 @@
 #define USE_COLOR     // Yes, please.
 
 #include <fcntl.h>
+#include <locale.h>
 #include <math.h>
 #include <semaphore.h>
 #include <signal.h>
@@ -27,11 +28,11 @@
 
 /* Parameters */
 
-time_t      tallying_period = 10;           // Tallying period (in seconds) 
-u32         bloom_filter_size = 0x4000000;  // Bloom filter size (in bytes)
-u8          num_hashes = 4;                 // Number of hashes
-const char* out_path = "lscov.csv";         // Output path
-u8          error_percent = 0;              // Error bound (0: disabled)
+time_t      tallying_period = 10;      // Tallying period (in seconds) 
+u32         bfilter_size = 0x4000000;  // Bloom filter size, in bytes
+u8          num_hashes = 4;            // Number of hashes
+const char* out_path = "lscov.csv";    // Output path
+u8          error_percent = 0;         // Error bound (0: disabled)
 
 /* State variables */
 
@@ -41,12 +42,13 @@ sem_t*      sema_rd;              // (sema) RT to daemon - "que update"
 sem_t*      sema_dr;              // (sema) daemon to RT - "que execution"
 struct timespec loop_timeout;     // 'sema_rd' semaphore timeout
 
-u8*         bloom_filter;         // Bloom filter itself
+u8*         bfilter;              // Bloom filter itself
+u32         bfilter_size_bits;    // Bloom filter size, in bits
 time_t      start_time;           // Measurement start time (in unix time)
 time_t      next_tallying_time;   // Next tallying time (in unix time)
 
 
-// FIXME: bloom_filter --> limiting caching? other core?
+// FIXME: bfilter --> limiting caching? other core?
 
 void out_init() {
   FILE *fout = fopen(out_path, "w");
@@ -136,7 +138,7 @@ void hcount_init() {
   if (sema_rd == (void *)-1) 
     PFATAL("sem_open() for sema_rd failed");
 
-  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 1);
+  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 0);
   if (sema_dr == (void *)-1) 
     PFATAL("sem_open() for sema_dr failed");
 
@@ -212,71 +214,60 @@ u32 bfilter_get_hash_index(const u8 *lstate, u32 seed) {
   h *= 0xc2b2ae35;
   h ^= (h >> 16);
 
-  return h % (bloom_filter_size << 3);
+  return h % bfilter_size_bits;
 }
 
 void bfilter_set_1_by_index(u32 idx) {
   u32 byte_idx = idx >> 3;
   u8 bit_idx = idx & 0x07;
 
-  if (byte_idx >= bloom_filter_size)
+  if (byte_idx >= bfilter_size)
     FATAL("bogus 'byte_idx' for a bloom filter (byte_idx: %d, size: %u)",
-        byte_idx, bloom_filter_size);
+        byte_idx, bfilter_size);
 
-  bloom_filter[byte_idx] |= (1 << bit_idx);
+  bfilter[byte_idx] |= (1 << bit_idx);
 }
 
-u32 bfilter_calc_cardinality(u32 *_num_1s) {
-#ifdef DEBUG_CARDINALITY_TIME
-  /* Overhead measuring */
-  struct timespec t1, t2;
-  clock_gettime(CLOCK_MONOTONIC, &t1);
-#endif
-
+u32 bfilter_get_num_1s() {
   /* Tally 1s in the filter. */
   u32 num_1s = 0;
 
-  for (int i = 0; i < bloom_filter_size; i++) {
-    u8 _byte = bloom_filter[i];
+  for (int i = 0; i < bfilter_size; i++) {
+    u8 _byte = bfilter[i];
     while (_byte) {
       num_1s += (_byte & 0x01);
       _byte >>= 1;
     }
   }
 
-  if (_num_1s)
-    *_num_1s = num_1s;
+  return num_1s;
+}
 
+u32 bfilter_calc_cardinality(u32 num_1s) {
   /* Estimate cardinality. */
   static int has_divisor = 0;
   static double divisor;
 
   if (!has_divisor) {
-    divisor = num_hashes * log(1.0 - 1.0/(bloom_filter_size << 3));
+    divisor = num_hashes * log(1.0 - 1.0/bfilter_size_bits);
     has_divisor = 1;
   }
 
   // FIXME: replacing 'log' with a faster one?
-  double dividend = log(1.0 - (double)num_1s/(bloom_filter_size << 3));
+  double dividend = log(1.0 - (double)num_1s/bfilter_size_bits);
   u32 cov = (u32)(dividend / divisor);
-
-#ifdef DEBUG_CARDINALITY_TIME
-  /* Overhead measuring */
-  clock_gettime(CLOCK_MONOTONIC, &t2);
-  ACTF("Cardinality calculation time: %.5f", 
-      ((double)t2.tv_sec + 1.0e-9 * t2.tv_nsec) - 
-      ((double)t1.tv_sec + 1.0e-9 * t1.tv_nsec)); 
-#endif
 
   return cov;
 }
 
 void bfilter_init() {
+  bfilter_size_bits = (bfilter_size << 3);
+
   /* Allocate memory for a bloom filter. MAP_ANONYMOUS will automatically
    * zeroize the filter. */
-  bloom_filter = mmap(0, bloom_filter_size, PROT_READ | PROT_WRITE, 
+  bfilter = mmap(0, bfilter_size, PROT_READ | PROT_WRITE, 
       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (bloom_filter == MAP_FAILED)
+  if (bfilter == MAP_FAILED)
     PFATAL("bloom filter allocation failed.");
 }
 
@@ -309,21 +300,54 @@ void tally_init() {
 }
 
 
+#define PRINT_STAT
+void lscov_init() {
+#ifdef PRINT_STAT
+  setlocale(LC_NUMERIC, "en_US.UTF-8");
+#endif
+}
+
 void lscov_report(int use_cur_time) {
   if (!start_time)
     return;
+
+#ifdef PRINT_STAT
+  static u32 prev_cov = 0;
+#endif
 
   time_t prev_next_time = tally_update_next_time();
   if (use_cur_time)
     prev_next_time = time(NULL);
 
-  u32 num_1s;
-  u32 prev_time = prev_next_time - start_time;
-  u32 cov = bfilter_calc_cardinality(&num_1s); 
-  // TODO: calculate error bounds.
-  out_append(prev_time, cov, 0, 0);
+#ifdef DEBUG_CARDINALITY_TIME
+  /* Overhead measuring */
+  struct timespec t1, t2;
+  clock_gettime(CLOCK_MONOTONIC, &t1);
+#endif
 
-  OKF("Recorded new coverage. (time: %u, cov: %u, num_1s: %u)", prev_time, cov, num_1s); 
+  u32 prev_time = prev_next_time - start_time;
+  u32 num_1s = bfilter_get_num_1s();
+  u32 cov = bfilter_calc_cardinality(num_1s); 
+  // TODO: calculate error bounds.
+
+#ifdef DEBUG_CARDINALITY_TIME
+  /* Overhead measuring */
+  clock_gettime(CLOCK_MONOTONIC, &t2);
+  ACTF("Cardinality calculation time: %.5f", 
+      ((double)t2.tv_sec + 1.0e-9 * t2.tv_nsec) - 
+      ((double)t1.tv_sec + 1.0e-9 * t1.tv_nsec)); 
+#endif
+
+  out_append(prev_time, cov, 0, 0);
+  OKF("Recorded new coverage. (time: %u, cov: %'u)", prev_time, cov);
+  
+#ifdef PRINT_STAT
+  SAYF("    density: %3.2f%%, rate: (imm) %'u ls/sec, (all) %'u ls/sec\n",
+    (float)num_1s / bfilter_size_bits * 100,
+    (u32)((cov - prev_cov) / tallying_period), 
+    (u32)(cov / prev_time)); 
+  prev_cov = cov;
+#endif
 }
 
 void lscov_wait() {
@@ -335,6 +359,15 @@ void lscov_wait() {
     continue;
 }
 
+/* Debug */
+void sem_print_val(const char *when) {
+  int _sema_rd_val;
+  int _sema_dr_val;
+  sem_getvalue(sema_rd, &_sema_rd_val);
+  sem_getvalue(sema_dr, &_sema_dr_val);
+  SAYF("[%s] rd:%d, dr:%d\n", when, _sema_rd_val, _sema_dr_val);
+}
+
 void lscov_loop() {
   while (1) {
     int sem_rd_ret = hcount_wait_until_ready(); 
@@ -344,6 +377,7 @@ void lscov_loop() {
 #ifdef DEBUG_RECEIVE_HCOUNT
       ACTF("Received new hit counts.");
 #endif
+
       /* Bucketize the hit counts, making a logic state. */
       static u8* lstate;
       if (!lstate)
@@ -393,6 +427,7 @@ int main(int argc, char** argv) {
   
   /* Initialization */
   ACTF("Initializating...");
+  lscov_init();
   sig_init();
   out_init();
   hcount_init();

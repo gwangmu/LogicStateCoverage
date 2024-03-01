@@ -8,6 +8,7 @@
  */
 
 #include <semaphore.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/shm.h>
 #include "stuff.h"
@@ -28,7 +29,13 @@ sem_t*       __lscov_sema_dr;
 
 /* Initialization (per execution) */
 
-__attribute__((constructor(CONST_PRIO))) 
+/* Some fuzzers (well, most of them) insert their initializer as a constuctor.
+ * What's worse is that they put their initializer at the least priority,
+ * so the forkserver happens before any other initializers. '__lscov_init'
+ * CANNOT be one of them because it should wait a semaphore ('__lscov_sema_dr')
+ * every execution. Just insert a call to '__lscov_init' at the beginning of
+ * 'main' and that'll defeat all initializers. M-hwa-hwa-hwa. */
+//__attribute__((constructor(CONST_PRIO))) 
 void __lscov_init(void) {
   /* Same as AFL. If we're running with logic state coverage measurement, attach
      to the appropriate region. SHM_ENV_VAR should be set in the measurement

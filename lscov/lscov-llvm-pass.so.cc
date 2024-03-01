@@ -37,6 +37,18 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
 
   /* Show a banner */
   //SAYF(cCYA "lscov-llvm-pass " cBRI VERSION cRST " by <iss300@gmail.com>\n");
+  
+  Function *MainFn = M.getFunction("main");
+  if (MainFn) {
+    FunctionType *VoidVoidFTy = FunctionType::get(Type::getVoidTy(C), false);
+    Value *LSCovInit = M.getOrInsertFunction("__lscov_init", VoidVoidFTy).getCallee();
+
+    BasicBlock &BB = MainFn->getEntryBlock();
+    BasicBlock::iterator IP = BB.getFirstInsertionPt();
+    IRBuilder<> IRB(&(*IP));
+
+    IRB.CreateCall(VoidVoidFTy, LSCovInit);
+  }
 
   /* Get globals for the SHM region and the previous location */
   GlobalVariable *LSCovMapPtr = new GlobalVariable(

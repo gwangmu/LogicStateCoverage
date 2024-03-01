@@ -25,10 +25,10 @@ ifeq (,$(shell which llvm-config))
 	$(error No llvm-config found. Install llvm or set LLVM_ROOT.)
 endif
 ifndef WRAP_CC
-	$(warning WRAP_CC_PATH undefined. Taking default clang...)
+	$(warning WRAP_CC_PATH undefined.)
 endif
 ifndef WRAP_CXX
-	$(warning WRAP_CXX_PATH undefined. Taking default clang++...)
+	$(warning WRAP_CXX_PATH undefined.)
 endif
 	@echo "info: building.."; 
 	@make -C${BUILD_DIR} -j${NPROC} 
