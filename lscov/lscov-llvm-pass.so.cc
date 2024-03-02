@@ -41,13 +41,13 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
   Function *MainFn = M.getFunction("main");
   if (MainFn) {
     FunctionType *VoidVoidFTy = FunctionType::get(Type::getVoidTy(C), false);
-    Value *LSCovInit = M.getOrInsertFunction("__lscov_init", VoidVoidFTy).getCallee();
+    Value *LSCovMain = M.getOrInsertFunction("__lscov_main", VoidVoidFTy).getCallee();
 
     BasicBlock &BB = MainFn->getEntryBlock();
     BasicBlock::iterator IP = BB.getFirstInsertionPt();
     IRBuilder<> IRB(&(*IP));
 
-    IRB.CreateCall(VoidVoidFTy, LSCovInit);
+    IRB.CreateCall(VoidVoidFTy, LSCovMain);
   }
 
   /* Get globals for the SHM region and the previous location */

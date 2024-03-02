@@ -35,14 +35,16 @@ void __lscov_fin(void) {
   if (__lscov_sema_rd) {
     /* Mark the end of recording, if there was no crash. */
     sem_post(__lscov_sema_rd);
+
+    /* Mark that it notified this termination to the daemon. */
     (*__lscov_area_ptr)--;
   }
 }
 
-/* Initialization (per execution) */
+/* Initialization (upon starting) */
 
 __attribute__((constructor(CONST_PRIO))) 
-void __lscov_iiiiiinit(void) {
+void __lscov_init(void) {
   s32 shm_hcount_id = shmget(LSCOV_SHM_HCOUNT_KEY, LSTATE_SIZE, 0600);
 
   if (shm_hcount_id >= 0) {
@@ -61,28 +63,31 @@ void __lscov_iiiiiinit(void) {
   }
 }
 
-/* Some fuzzers (well, most of them) insert their initializer as a constuctor.
+/* Initialization (every execution)
+ *
+ * Some fuzzers (well, most of them) insert their initializer as a constuctor.
  * What's worse is that they put their initializer at the least priority,
- * so the forkserver happens before any other initializers. '__lscov_init'
+ * so the forkserver happens before any other initializers. '__lscov_main'
  * CANNOT be one of them because it should wait a semaphore ('__lscov_sema_dr')
- * every execution. Just insert a call to '__lscov_init' at the beginning of
+ * every execution. Just insert a call to '__lscov_main' at the beginning of
  * 'main' and that'll defeat all initializers. M-hwa-hwa-hwa. */
-//__attribute__((constructor(CONST_PRIO))) 
-void __lscov_init(void) {
-  /* Same as AFL. If we're running with logic state coverage measurement, attach
-     to the appropriate region. SHM_ENV_VAR should be set in the measurement
-     daemon, of course. */
-  if (*__lscov_area_ptr > 0x80) {
-    sem_post(__lscov_sema_rd);
-    (*__lscov_area_ptr)--;
-  }
+
+void __lscov_main(void) {
+  /* Similar to AFL, if we're running with logic state coverage measurement,
+   * attach to the appropriate region. */
 
   if (__lscov_sema_rd) {
     /* If the destructor was not called in the last execution (e.g., due to a
-       crash), mark it finished and let the daemon do its job. This hack will
-       make the daemon ignore the very last execution if it was a crash, but
-       it's just only *one* execution. */
+     * crash), mark it finished and let the daemon do its job. This hack will
+     * make the daemon ignore the very last execution if it was a crash, but
+     * it's just only *one* execution. */
 
+    if (*__lscov_area_ptr > 0x80) {
+      sem_post(__lscov_sema_rd);
+      (*__lscov_area_ptr)--;
+    }
+
+    /* Sanity check. Should be a lock-step. */
     int _sema_dr_val;
     sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
     if (_sema_dr_val > 1)
@@ -91,9 +96,10 @@ void __lscov_init(void) {
     /* Wait until SHM is ready */
     sem_wait(__lscov_sema_dr);
 
-    /* Signal the daemon that it's gonna start execution.
-     * Let's use one unlikely bit at the beginning. All logic states will have
-     * this bit, so it has zero implication for the coverage. */
+    /* Signal the daemon to start an execution (0x80) and mark this hit count as
+     * unnotified yet to the daemon (0x01). For convenience's sake, just use one
+     * unlikely bit at the beginning. All logic states will have this bit, so it
+     * has zero implication for the coverage. */
     *__lscov_area_ptr = 0x81;
   }
 }
