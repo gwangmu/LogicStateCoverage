@@ -95,24 +95,25 @@ void stat_append(u32 time, u32 cov, float density, u32 rate_ins,
 static inline int hcount_wait_until_ready() {
   int _sema_rd_val;
   sem_getvalue(sema_rd, &_sema_rd_val);
-  if (_sema_rd_val > 1)
+  if (_sema_rd_val > 1) {
+    assert(0 && "_sema_rd_val > 1");
     FATAL("_sema_rd_val: %d", _sema_rd_val);
+  }
   return sem_timedwait(sema_rd, &loop_timeout);
 }
 
-static const u8 count_class_lookup8[256] = {
-  [0]           = 0,
-  [1]           = 1,
-  [2 ... 3]     = 2,
-  [4 ... 7]     = 4,
-  [8 ... 15]    = 8, 
-  [16 ... 31]   = 16,
-  [32 ... 63]   = 32,
-  [64 ... 127]  = 64,
-  [128 ... 255] = 128 
+/* Bucketing excerpted from AFL. It was much faster than my implementation,
+ * unsurprisingly */
+
+/* Bucket = log2(log4(hit_count)+1) */
+static const u8 count_bucket_lookup8[256] = {
+  [0]           = 0,    // No hit
+  [1 ... 3]     = 1,    // Hit
+  [4 ... 63]    = 2,    // Revisit
+  [64 ... 255]  = 4,    // Repetition
 };
 
-static u16 count_class_lookup16[65536];
+static u16 count_bucket_lookup16[65536];
 
 static inline void hcount_bucket_to_lstate(u8* lstate) {
   u32 i = LSTATE_SIZE >> 3;
@@ -125,41 +126,16 @@ static inline void hcount_bucket_to_lstate(u8* lstate) {
     if (unlikely(*mem)) {
       u16* mem16 = (u16*)mem;
       u16* dest16 = (u16*)dest;
-      dest16[0] = count_class_lookup16[mem16[0]];
-      dest16[1] = count_class_lookup16[mem16[1]];
-      dest16[2] = count_class_lookup16[mem16[2]];
-      dest16[3] = count_class_lookup16[mem16[3]];
+      dest16[0] = count_bucket_lookup16[mem16[0]];
+      dest16[1] = count_bucket_lookup16[mem16[1]];
+      dest16[2] = count_bucket_lookup16[mem16[2]];
+      dest16[3] = count_bucket_lookup16[mem16[3]];
     }
 
     mem++;
     dest++;
   }
 }
-
-#if 0
-/* It was too slow. Time to steal code from AFL. */
-
-void hcount_bucket_to_lstate(u8* lstate) {
-  /* The bucket numbers are one-hot-encoded. For example, Bucket 3 is encoded
-   * as 0x04 (0b00000100). Hit count 0 goes to Bucket 0. Anything else will go
-   * to Bucket [log_2(hit_count)] + 1, which is the previous power-of-2 integer
-   * interpreted as a one-hot-encoded bit vector. */
-
-  for (int i = 0; i < LSTATE_SIZE; i++) {
-    /* Previous-power-of-2 implementation by Henry S. Warren Jr.
-     * (https://stackoverflow.com/questions/2679815/previous-power-of-2)
-     * In "Hacker's Delight." */
-
-    u8 x = hit_counts[i];
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >> 16);
-    lstate[i] = x - (x >> 1);
-  }
-}
-#endif
 
 void hcount_nuke() {
   memset(hit_counts+1, 0, LSTATE_SIZE-1);
@@ -195,23 +171,25 @@ void hcount_init() {
     PFATAL("shmat() for hit_count failed");
 
   /* Initialize semaphores. */
-  sema_rd = sem_open(LSCOV_SEMA_RD_NAME, O_CREAT, 0644, 0);
+  sem_unlink(LSCOV_SEMA_RD_NAME);
+  sema_rd = sem_open(LSCOV_SEMA_RD_NAME, O_CREAT | O_EXCL, 0644, 0);
   if (sema_rd == (void *)-1) 
     PFATAL("sem_open() for sema_rd failed");
 
-  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT, 0644, 1);
+  sem_unlink(LSCOV_SEMA_DR_NAME);
+  sema_dr = sem_open(LSCOV_SEMA_DR_NAME, O_CREAT | O_EXCL, 0644, 1);
   if (sema_dr == (void *)-1) 
     PFATAL("sem_open() for sema_dr failed");
 
   /* Initialize 'hit_counts'. */
   memset(hit_counts, 0, LSTATE_SIZE);
 
-  /* Initialize 'count_class_lookup16' */
+  /* Initialize 'count_bucket_lookup16' */
   for (u32 b1 = 0; b1 < 256; b1++) 
     for (u32 b2 = 0; b2 < 256; b2++)
-      count_class_lookup16[(b1 << 8) + b2] = 
-        (count_class_lookup8[b1] << 8) |
-        count_class_lookup8[b2];
+      count_bucket_lookup16[(b1 << 8) + b2] = 
+        (count_bucket_lookup8[b1] << 8) |
+        count_bucket_lookup8[b2];
 }
 
 

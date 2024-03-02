@@ -28,17 +28,32 @@ sem_t*       __lscov_sema_rd;
 sem_t*       __lscov_sema_dr;
 
 
+void __lscov_end_exec() {
+  /* Mark that it notified this termination to the daemon. */
+  *__lscov_area_ptr = 0x80;
+
+  /* Mark the end of recording, if there was no crash. */
+  int _sema_rd_val;
+  sem_getvalue(__lscov_sema_rd, &_sema_rd_val);
+  if (_sema_rd_val)
+    assert(0 && "non-zero _sema_rd_val");
+  sem_post(__lscov_sema_rd);
+}
+
+void __lscov_start_exec() {
+  /* Wait until SHM is ready */
+  sem_wait(__lscov_sema_dr);
+
+  /* Mark this hit count as unnotified yet to the daemon (0x01). */
+  *__lscov_area_ptr = 0x81;
+}
+
 /* Finalization (per execution) */
 
 __attribute__((destructor(CONST_PRIO))) 
 void __lscov_fin(void) {
-  if (__lscov_sema_rd) {
-    /* Mark the end of recording, if there was no crash. */
-    sem_post(__lscov_sema_rd);
-
-    /* Mark that it notified this termination to the daemon. */
-    (*__lscov_area_ptr)--;
-  }
+  if (__lscov_sema_rd) 
+    __lscov_end_exec();
 }
 
 /* Initialization (upon starting) */
@@ -60,6 +75,11 @@ void __lscov_init(void) {
     __lscov_sema_dr = sem_open(LSCOV_SEMA_DR_NAME, 0, 0644, 0);
     if (__lscov_sema_dr == (void *)-1) 
       PFATAL("sem_open() for sema_dr failed");
+
+    /* Signal the daemon to start an execution. For convenience's sake, just use
+     * one unlikely bit at the beginning. All logic states will have this bit,
+     * so it has zero implication for the coverage. */
+    *__lscov_area_ptr = 0x80;
   }
 }
 
@@ -82,24 +102,22 @@ void __lscov_main(void) {
      * make the daemon ignore the very last execution if it was a crash, but
      * it's just only *one* execution. */
 
-    if (*__lscov_area_ptr > 0x80) {
-      sem_post(__lscov_sema_rd);
-      (*__lscov_area_ptr)--;
-    }
+    if (*__lscov_area_ptr > 0x80) 
+      __lscov_end_exec();
 
-    /* Sanity check. Should be a lock-step. */
+    /* Sanity check: should be a lock-step. */
     int _sema_dr_val;
     sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
     if (_sema_dr_val > 1)
-      FATAL("_sema_dr_val: %d", _sema_dr_val);
+      assert(0 && "_sema_dr_val > 1");
 
-    /* Wait until SHM is ready */
-    sem_wait(__lscov_sema_dr);
+    __lscov_start_exec();
 
-    /* Signal the daemon to start an execution (0x80) and mark this hit count as
-     * unnotified yet to the daemon (0x01). For convenience's sake, just use one
-     * unlikely bit at the beginning. All logic states will have this bit, so it
-     * has zero implication for the coverage. */
-    *__lscov_area_ptr = 0x81;
+    /* Sanity check: should have a clear '__lscov_area_ptr'. */
+    u8 _test_hc = 0;
+    for (int i = 1; i < (LSTATE_SIZE >> 4); i++)
+      _test_hc |= __lscov_area_ptr[i << 4];
+    if (_test_hc) 
+      assert(0 && "tainted hit counts");
   }
 }
