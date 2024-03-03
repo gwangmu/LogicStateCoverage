@@ -105,13 +105,33 @@ static inline int hcount_wait_until_ready() {
 /* Bucketing excerpted from AFL. It was much faster than my implementation,
  * unsurprisingly */
 
-/* Bucket = log2(log4(hit_count)+1) */
+//#define BUCKET_1
+
+#ifdef BUCKET_1
+static const u8 count_bucket_lookup8[256] = {
+  [0]           = 0,
+  [1 ... 255]   = 1,
+};
+#elif defined BUCKET_LOG2_LOG4
 static const u8 count_bucket_lookup8[256] = {
   [0]           = 0,    // No hit
   [1 ... 3]     = 1,    // Hit
   [4 ... 63]    = 2,    // Revisit
   [64 ... 255]  = 4,    // Repetition
 };
+#else // BUCKET_LOG2
+static const u8 count_bucket_lookup8[256] = {
+  [0]           = 0,    // No hit
+  [1]           = 1,    // Hit
+  [2 ... 3]     = 2,    
+  [4 ... 7]     = 4,    
+  [8 ... 15]    = 8,    
+  [16 ... 31]   = 16,    
+  [32 ... 63]   = 32,    
+  [64 ... 127]  = 64,   // Repetition
+  [128 ... 255] = 128,
+};
+#endif
 
 static u16 count_bucket_lookup16[65536];
 
