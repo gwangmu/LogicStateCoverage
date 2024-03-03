@@ -185,12 +185,12 @@ abnormal behaviors.
 As it is challenging to directly count interesting program behaviors when
 fuzzing produces hundreds of them every second, we propose \emph{logic state
 coverage} as a feasible proxy metric of interesting behaviors. A logic state is
-a set of all satisfied branches during one execution, bucketed by their hit
-counts (larger buckets for higher hit counts). Logic state coverage then
-\emph{individually counts} all observed distinct logic states.  One logic state
-represents \emph{fewer} program behaviors if they are \emph{more interesting}
-(i.e., likely relating to unknown abnormal behaviors), meaning that observing
-more interesting behaviors is strongly reflected on larger logic state coverage. 
+a set of all satisfied branches during one execution, where logic state coverage
+is defined as the \emph{individual count} of all observed distinct logic states.
+One logic state represents \emph{fewer} behaviors if they are \emph{more
+interesting} (i.e., likely relating to unknown abnormal behaviors), meaning that
+observing more interesting behaviors is strongly reflected on larger logic state
+coverage. 
 
 % design: edge bitmap rehashing
 %  - idea
@@ -337,17 +337,12 @@ As the interestingness $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of an
 However, the practice of untargeted fuzzing suggests that
 the resulting program behavior is unlikely to be \emph{unknown abnormal} if the
 mutation base is highly repetitive, as it commonly incorporates corpus
-minimization \cite{} and branch hit count buckets \cite{}.
+minimization \cite{todo} and branch hit count buckets \cite{todo}.
 %
 The rationales are: (i) abnormal behaviors might have been already observed with
 fewer branch repetitions (i.e., unlikely \emph{abnormal}) and (ii) if so, it may
 correspond to pre-observed less-repetition counterparts (i.e., unlikely
 \emph{unknown}).
-
-
-%The prime example is the branch hit count bucketing in AFL \cite{afl}, where
-%the bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7,
-%8-15, ...).
 
 %However, the practice of untargeted fuzzing in recent years suggests that
 %abnormal behaviors get increasingly unlikely to require a larger number of
@@ -420,19 +415,13 @@ completeness that indirectly counts interesting program behaviors.
 \pp{Logic state and logic space}
 %
 A \emph{logic state} $l$ is a set of all satisfied branches during execution,
-each of which is paired with the integer logarithm of the corresponding branch
-hit count. Formally, given a branch history $\mathcal{T}_b$ of an execution,
+which is essentially the order-ignored version of a branch history. Formally,
+given a branch history $\mathcal{T}_b$ of an execution,
 %
 \begin{equation}
 \label{e:ls}
-  l := \{(b, n(b)) \mid b \in \mathcal{T}_b\},
+  l := \{b \mid b \in \mathcal{T}_b\},
 \end{equation}
-
-\noindent where $n(b) = \lfloor \log_2{m(b)} \rfloor$ and $m(b)$ is the hit
-count of a branch $b$ in $\mathcal{T}_b$.  Notice that, as it gets larger, a
-branch hit count $m(b)$ shares the same integer "bucket" $n(b)$ with
-exponentially more hit counts (i.e., $n(b)=x \iff m(b) \in \{2^x, ...,
-2^{x+1}-1\}$).
 
 A \emph{logic space} $\mathbb{L}$, then, is a set of all possible logic states
 of a given program. 
@@ -464,10 +453,10 @@ of them as it is heavily affected by the previous observation.
 As shown in \autoref{f:prog-to-logic}, a logic state (i.e., a partition in the
 program behavior space) may contain various program behaviors, suggesting a
 single covered logic state may encompass several different behaviors. However,
-in \autoref{s:prop}, we argue that a logic state is representative of
-interesting program behaviors as it (i) weighs interesting program behaviors
-over uninteresting ones and (ii) only contains the program behaviors of the same
-normality.
+in \autoref{s:prop}, we explain that a logic state is representative of
+interesting program behaviors as it (i) reflects the interestingness of
+underlying program behaviors and (ii) only contains the program behaviors of the
+same normality.
 
 
 \section{Representativeness of Logic States}
