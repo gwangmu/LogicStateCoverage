@@ -70,7 +70,7 @@
   inconclusive, exaggerated, or even counter-intuitive results.
   
   To establish a more reliable quality metric, we first note that fuzzing 
-  aims to reduce the number of unknown \emph{abnormal} behaviors by observing
+  aims to reduce the number of \emph{unknown abnormal} behaviors by observing
   more \emph{interesting} (i.e., relating to unknown abnormal) behaviors. The
   more interesting behaviors a fuzzer has observed, the stronger guarantee it
   can provide about the absence of unknown abnormal behaviors. This suggests
@@ -189,10 +189,9 @@ fuzzing produces hundreds of them every second, we propose \emph{logic state
 coverage} as a feasible proxy metric of interesting behaviors. A logic state is
 a set of all satisfied branches during one execution, where logic state coverage
 is the \emph{individual count} of all observed distinct logic states during a
-fuzzing campaign. Logic states represent more \emph{interesting} behaviors
-(i.e., relating to unknown abnormal behaviors) in a finer granularity, meaning
-that observing more interesting behaviors is reliably reflected to larger
-coverage. 
+fuzzing campaign. Logic states represent \emph{interesting} behaviors (i.e.,
+relating to unknown abnormal behaviors) in a finer granularity, meaning that
+observing more interesting behaviors is reliably reflected to larger coverage. 
 
 % design: edge bitmap rehashing
 %  - idea
@@ -308,24 +307,24 @@ $\mathrm{U} \subset \mathrm{N}$.
 \pp{Formal justification}
 %
 The approach of untargeted fuzzing can be formally described as follows. Upon
-executing a mutated input, let $P(\mathrm{N})$ be the probability of observing a
+executing a mutated input, let $\Pr(\mathrm{N})$ be the probability of observing a
 \underline{\textbf{n}}ew behavior as a result of execution. Then, the
 probability of discovering \underline{\textbf{u}}nknown
-\underline{\textbf{a}}bnormal behavior $P(\mathrm{UA}) := P(\mathrm{U} \cap
+\underline{\textbf{a}}bnormal behavior $\Pr(\mathrm{UA}) := \Pr(\mathrm{U} \cap
 \mathrm{A})$ is
 %
 \begin{align}
-  P(\mathrm{UA}) 
-      &= P(\mathrm{N} \cap \mathrm{UA}) \tag{by $\mathrm{U} \subset \mathrm{N}$} \\
-      &= P(\mathrm{N}) \times P(\mathrm{UA} \mid \mathrm{N}) \tag{by chain rule}. 
+  \Pr(\mathrm{UA}) 
+      &= \Pr(\mathrm{N} \cap \mathrm{UA}) \tag{by $\mathrm{U} \subset \mathrm{N}$} \\
+      &= \Pr(\mathrm{N}) \cdot \Pr(\mathrm{UA} \mid \mathrm{N}) \tag{by chain rule}. 
 \end{align}
 
-Here, the second term $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
+Here, the second term $\Pr(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
 revealing an unknown abnormal behavior given a new behavior, which can be
 interpreted as the \emph{interestingness} of the mutation base. In other words,
-untargeted fuzzing attempts to (i) increase $P(\mathrm{N})$ to investigate more
-program behaviors while (ii) keeping the interestingness $P(\mathrm{UA} \mid
-\mathrm{N})$ as high as possible.
+untargeted fuzzing attempts to (i) increase $\Pr(\mathrm{N})$ to investigate
+more program behaviors while (ii) keeping the interestingness $\Pr(\mathrm{UA}
+\mid \mathrm{N})$ high.
 %
 %Notice that executing more inputs is not the same as observing more distinct
 %behaviors, as inputs can exhibit the same behavior (e.g., the same
@@ -333,18 +332,23 @@ program behaviors while (ii) keeping the interestingness $P(\mathrm{UA} \mid
 
 \pp{Interestingness in practice}
 %
-As the interestingness $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of an
-\emph{unobserved} behavior, there is no direct way to measure interestingness. 
+As the interestingness $\Pr(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
+an \emph{unobserved} behavior, there is no direct way to measure
+interestingness. 
 %
-However, the practice of untargeted fuzzing suggests that
-the resulting program behavior is unlikely to be \emph{unknown abnormal} if the
-mutation base is highly repetitive, as fuzzers commonly incorporate corpus
-minimization \cite{todo} and branch hit count buckets \cite{todo}.
+However, the common usage of corpus minimization \cite{todo} and branch hit
+count buckets \cite{todo} in untargeted fuzzing suggests that a program behavior
+is less likely to be \emph{unknown abnormal} (i.e., less interesting) if its
+mutation base input is highly repetitive.
+%in modern untargeted fuzzing.
 %
-The rationales are: (i) if a fewer repetition was normal, more repetition is
-also likely normal (i.e., unlikely \emph{abnormal}) and (ii) even if it was
-abnormal, it may correspond to pre-observed less-repetition counterparts (i.e.,
-unlikely \emph{unknown}).
+The rationales are: (i) if a fewer repetition was normal,
+more repetition is also likely normal and (ii) even if it was abnormal, it is 
+not unknown if it corresponds to pre-observed less-repetition counterparts. 
+
+To generalize this practice from mutation base inputs to all inputs (i.e., all
+their program behaviors), a program behavior can be deemed less interesting if
+it include more repetitions.
 
 %However, the practice of untargeted fuzzing in recent years suggests that
 %abnormal behaviors get increasingly unlikely to require a larger number of
@@ -364,7 +368,7 @@ unlikely \emph{unknown}).
 %behavior when $X=n$ is;
 %%
 %\begin{equation}
-%  P(\mathrm{abnormal} \mid X=n) \propto 1/n.
+%  \Pr(\mathrm{abnormal} \mid X=n) \propto 1/n.
 %\end{equation}
 
 %Notice that this formulation only holds when $n \ge 1$, meaning that it does not
@@ -422,7 +426,7 @@ given a branch history $\mathcal{T}_b$ of an execution,
 %
 \begin{equation}
 \label{e:ls}
-  l := \{b \mid b \in \mathcal{T}_b\},
+  l := \{b \mid b \in \mathcal{T}_b\}.
 \end{equation}
 
 A \emph{logic space} $\mathbb{L}$, then, is a set of all possible logic states
@@ -917,38 +921,38 @@ of other behaviors \emph{on course for} such.
 %branches but only some of them satisfy exceptions (e.g., due to different data
 %values).
 
-\pp{Interestingness: definition vs. convention}
+%\pp{Interestingness: definition vs. convention}
+%%
+%Although the \emph{interestingness} has been widely discussed in recent
+%untargeted fuzzing, it has never been clearly defined. The conventional
+%understanding is a property of an \emph{input} having \emph{new
+%execution paths} in its resulting behavior. In comparison, this work
+%defines interestingness as a property of a \emph{program behavior} indicating 
+%the \emph{expectation} of being an abnormal behavior. 
 %
-Although the \emph{interestingness} has been widely discussed in recent
-untargeted fuzzing, it has never been clearly defined. The conventional
-understanding is a property of an \emph{input} having \emph{new
-execution paths} in its resulting behavior. In comparison, this work
-defines interestingness as a property of a \emph{program behavior} indicating 
-the \emph{expectation} of being an abnormal behavior. 
-
-Despite an apparent difference between them, the definition \emph{subsumes} the
-convention because if an input discovered a new path (conventional
-interesting), its behavior would have a higher expectation to be abnormal than
-the ones only exhibiting previously checked paths (defined interesting). 
-%
-Still, there are some disagreements between the definition and the convention,
-such as when a behavior \emph{contains} another known abnormal behavior without
-discovering any new path. The definition may be refined to resolve such
-disagreements.
+%Despite an apparent difference between them, the definition \emph{subsumes} the
+%convention because if an input discovered a new path (conventional
+%interesting), its behavior would have a higher expectation to be abnormal than
+%the ones only exhibiting previously checked paths (defined interesting). 
+%%
+%Still, there are some disagreements between the definition and the convention,
+%such as when a behavior \emph{contains} another known abnormal behavior without
+%discovering any new path. The definition may be refined to resolve such
+%disagreements.
 
 \pp{Completeness of targeted fuzzing}
 %
 The completeness of untargeted fuzzing hinges on the observation that the more
 program behavior it checks, the less abnormal program behaviors are expected to
-be left. This roughly translates to $P(\mathrm{abnormal} \mid \mathrm{new})$
+be left. This roughly translates to $\Pr(\mathrm{abnormal} \mid \mathrm{new})$
 being equal throughout a fuzzing campaign.
-%, whereby $P(\mathrm{new} \cap
-%\mathrm{abnormal})$ then majorly depends on how high $P(\mathrm{new})$ is;
+%, whereby $\Pr(\mathrm{new} \cap
+%\mathrm{abnormal})$ then majorly depends on how high $\Pr(\mathrm{new})$ is;
 %proportional to the number of observed program behaviors per time.
 %
 However, targeted fuzzing (e.g., directed or regression fuzzing)
 \emph{prioritizes} code that likely leads to abnormal behaviors, which may result
-in a larger $P(\mathrm{abnormal} \mid \mathrm{new})$ at the beginning that slowly
+in a larger $\Pr(\mathrm{abnormal} \mid \mathrm{new})$ at the beginning that slowly
 decreases over time. 
 
 This affects the fundamental observation for completeness because targeted
@@ -956,7 +960,7 @@ fuzzers may reveal more abnormal behaviors even after observing fewer program
 behaviors.
 %
 One possible remedy is refining interestingness to incorporate a complete set of
-factors that affects $P(\mathrm{abnormal})$ (e.g., freshness of code).  A
+factors that affects $\Pr(\mathrm{abnormal})$ (e.g., freshness of code).  A
 further investigation on interestingness is required.
 
 
