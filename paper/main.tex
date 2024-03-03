@@ -493,8 +493,8 @@ cannot represent that of other behaviors in the same logic state.
   \includegraphics[width=\columnwidth]{images/repr.pdf}
   \caption{Example control flow graph and the number of program behaviors
   (numbers in a grid) given two branch hit counts. $m(b)$ denotes the hit count
-  of the branch $b$. Dotted lines demarcate the start of a new power-of-2 branch
-  hit count.}
+  of the branch $b$. Dotted lines demarcate whether the corresponding branch is
+  hit or not (i.e., presence in a logic state).}
   % Each region surrounded by dotted lines constitutes one logic state.}
   \label{f:repr}
 \end{figure}
@@ -502,12 +502,9 @@ cannot represent that of other behaviors in the same logic state.
 \subsection{Interestingness}
 \label{s:prop:repr}
 
-Logic states distinguish the program behaviors with smaller branch hit counts
-in finer details (i.e., distinguishing \emph{interesting} behaviors) but
-coalesce the behaviors with larger hit counts (i.e., avoiding
-over-representation of \emph{uninteresting} behaviors). This results in a larger
-number of covered logic states (i.e., larger logic state coverage) when the
-observed program behaviors are more interesting.
+Logic states distinguish the program behaviors with less branch repetitions in a
+finer granularity, resulting in a higher number of covered logic states (i.e.,
+larger coverage) as the observed program behaviors are more interesting.
 
 %This is because logic
 %states lump together larger hit counts into fewer integer buckets
@@ -515,40 +512,40 @@ observed program behaviors are more interesting.
 
 \autoref{f:repr} shows an example control-flow graph and the number of possible
 program behaviors for each pair $(m(b_1), m(b_2))$, where $m(b)$ is the hit
-count of the branch $b$. For example, there are 
-two possible program behaviors, $b_2$ after $b_1$ or $b_1$ after
-$b_2$, when $(m(b_1), m(b_2))=(1, 1)$. 
+count of the branch $b$. For example, there are two possible program behaviors,
+$b_2$ after $b_1$ or $b_1$ after $b_2$, when $(m(b_1), m(b_2))=(1, 1)$. 
 %Notice that the back edge $b_3$ is always taken $m(b_1)+m(b_2)$ times by the shape of the graph.
 %
-The dotted lines demarcate the beginning of a new power-of-2 branch hit count
-(e.g., 1, 2, 4, ...), where the hit counts between them share the same integer
-bucket. Each region surrounded by dotted lines constitutes \emph{one logic
-state}, as all contained program behaviors fall into the same integer bucket
-in every branch.
+The dotted lines demarcate whether the corresponding branch is hit or not, which
+also corresponds to the presence of the branch in a logic state.
+%the beginning of a new power-of-2 branch hit count
+%(e.g., 1, 2, 4, ...), where the hit counts between them share the same integer
+%bucket. 
+The surrounded region has the same set of satisfied branches, constituting
+\emph{one logic state}.
 
-%Notice that a program behavior is deemed more interesting as it exhibits
-%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
-As shown, a logic state distinguishes more interesting program behaviors in a
-finer granularity, representing fewer behaviors with smaller branch hit counts
-(i.e., bottom left). On the other hand, it coalesces more behaviors when
-the branch hit counts get larger, where individual behaviors are deemed less
-interesting. 
-%
-This results in a larger number of covered logic states when the observed
-behaviors are more interesting (e.g., three program behaviors result in
-three different logic states when $m(b_3)<2$) while the opposite happens when
-they are not (e.g., a total of 11,950 behaviors fall into \emph{one} logic state
-when $4 \le m(b_1) < 8$ and $4 \le m(b_2) < 8$).
+As shown, the program behaviors with more repetitive branches are grouped with
+more program behaviors as one logic state.  For example, a program behavior
+having only one repetitive branch (either $b_1$ or $b_2$) falls into the slim
+logic states adjacent to axis (bottom right and top left), while a behavior
+having two repetitive branches (both $b_1$ and $b_2$) falls into the large logic
+state (top right). This results in observing repetitive (i.e., less interesting)
+program states represented by fewer logic states, leading to smaller logic state
+coverage. 
 
-%\autoref{f:repr} reveals two important properties of logic states. First, a
-%logic state distinguishes interesting program behaviors with smaller branch hit
-%counts in a finer granularity. For example, a logic state represents
-%exponentially fewer program behaviors as $m(b_1)$ and $m(b_2)$ approach to 1.
-%Second, a logic state coalesces less interesting program behaviors that require
-%high branch hit counts or exhibit specific branch ordering, avoiding
-%over-representation of them. For example, all 11,950 program behaviors
-%exhibiting different branch ordering with $4 \le m(A) \le 7$ and $4 \le m(B) \le
-%7$ are lumped into \emph{one} logic state.
+%%Notice that a program behavior is deemed more interesting as it exhibits
+%%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
+%As shown, a logic state distinguishes more interesting program behaviors in a
+%finer granularity, representing fewer behaviors with smaller branch hit counts
+%(i.e., bottom left). On the other hand, it coalesces more behaviors when
+%the branch hit counts get larger, where individual behaviors are deemed less
+%interesting. 
+%%
+%This results in a larger number of covered logic states when the observed
+%behaviors are more interesting (e.g., three program behaviors result in
+%three different logic states when $m(b_3)<2$) while the opposite happens when
+%they are not (e.g., a total of 11,950 behaviors fall into \emph{one} logic state
+%when $4 \le m(b_1) < 8$ and $4 \le m(b_2) < 8$).
 
 \begin{figure}[t]
   \centering
@@ -821,13 +818,12 @@ and elaborate on details (\autoref{s:design:rec} and \ref{s:design:count}).
 %  - (3) periodically estimate the # of distinct edge traces = logic states.
 
 \autoref{f:design} illustrates the workflow of logic state coverage
-measurement. Similar to edge coverage, it first records and buckets the branch
-hit counts of every execution, yielding a \emph{logic state} as a result 
-(\autoref{s:design:rec}). Then, it adds the recorded logic state to a 
-\emph{bloom filter} that represents a set of observed logic states, by setting
-the hash indices (\autoref{s:design:up}).  Finally, the measurement periodically
-reads off the bloom filter to count the number of observed logic states
-(\autoref{s:design:count}).
+measurement. Similar to edge coverage, it first records the \emph{logic state}
+of each execution via instrumentation (\autoref{s:design:rec}). Then, it adds
+the recorded logic state to a \emph{bloom filter} that represents a set of
+observed logic states, by setting the hash indices (\autoref{s:design:up}).
+Finally, the measurement periodically reads off the bloom filter to count the
+number of observed logic states (\autoref{s:design:count}).
 
 
 \subsection{Recording a Logic State}
