@@ -288,44 +288,74 @@ $(\mathcal{T}_b, \mathcal{T}_e)$ to a certain program behavior $h$.
 Fuzzing, as a form of software testing, aims at minimizing the number of unknown
 abnormal program behaviors. \emph{Untargeted} fuzzing addresses this goal by:
 (i) investigating as many \emph{new} program behaviors as possible and (ii)
-keeping the new behaviors \emph{more interesting} (i.e., more likely revealing
-unknown abnormal behaviors).
+keeping the mutation base input \emph{interesting} (i.e., more likely revealing
+unknown abnormal behaviors after mutation).
+
+\pp{New vs. unknown behaviors}
+%
+We first make a clear distinction between \emph{new} and \emph{unknown} 
+behaviors. \emph{New} behaviors are, as the name suggests, simply the behaviors 
+that have not been observed until now. On the other hand, \emph{unknown}
+behaviors are a subset of the \emph{new} behaviors \emph{not equivalent} to any
+observed behaviors. In particular, an abnormal behavior is \emph{unknown} if it
+is not equivalent to any observed abnormal behaviors (e.g., a unique root
+cause). Formally, if $\mathrm{U}$ and $\mathrm{N}$ are the sets of
+\underline{\textbf{u}}nknown and \underline{\textbf{n}}ew behaviors,
+respectively, $\mathrm{U} \subset \mathrm{N}$.
 
 \pp{Formal justification}
 %
-The approach can be described formally as follows. Let the
-\emph{interestingness} of a program behavior be $P(\mathrm{abnormal})$, the
-expectation of a certain program behavior being abnormal before observing
-it.\footnote{See \autoref{s:disc} for the compatibility of this definition and
-the conventional meaning of interestingness in untargeted fuzzing.} Furthermore,
-let $P(\mathrm{new})$ be the probability of a new behavior in the next
-execution.  Then, the probability of discovering unknown abnormal behavior in
-the next execution is
+The approach of untargeted fuzzing can be described formally as follows. Upon
+executing a mutated input, let $P(\mathrm{N})$ be the probability of observing a
+\underline{\textbf{n}}ew behavior as a result of execution. Then, the
+probability of discovering \underline{\textbf{u}}nknown
+\underline{\textbf{a}}bnormal behavior $P(\mathrm{UA}) := P(\mathrm{U} \cap
+\mathrm{A})$ is
 %
-\begin{equation}
-  P(\mathrm{new} \cap \mathrm{abnormal}) = P(\mathrm{new}) \times P(\mathrm{abnormal} \mid \mathrm{new}).
-\end{equation}
+\begin{align}
+  P(\mathrm{UA}) 
+      &= P(\mathrm{N} \cap \mathrm{UA}) \tag{by $\mathrm{U} \subset \mathrm{N}$} \\
+      &= P(\mathrm{N}) \times P(\mathrm{UA} \mid \mathrm{N}) \tag{by chain rule}. 
+\end{align}
 
-In this formulation, untargeted fuzzing attempts to (i) increase
-$P(\mathrm{new})$ to investigate more program behaviors while (ii) keep 
-$P(\mathrm{abnormal} \mid \mathrm{new})$ as high as possible to ensure new
-behaviors interesting.
+Here, the second term $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
+revealing an unknown abnormal behavior given a new behavior, which can be
+interpreted as the \emph{interestingness} of the mutation base. In other words,
+untargeted fuzzing attempts to (i) increase $P(\mathrm{N})$ to investigate more
+program behaviors while (ii) keeping the interestingness $P(\mathrm{UA} \mid
+\mathrm{N})$ as high as possible.
 %
-Notice that executing more inputs is not the same as observing more distinct
-behaviors, as inputs can exhibit the same behavior (e.g., the same
-early-termination).
+%Notice that executing more inputs is not the same as observing more distinct
+%behaviors, as inputs can exhibit the same behavior (e.g., the same
+%early-termination).
 
 \pp{Interestingness in practice}
 %
-As the interestingness $P(\mathrm{abnormal})$ depends on the expectation of an
-\emph{unobserved} behavior, there is no direct way to measure or formalize
-interestingness. However, the practice of untargeted fuzzing in recent years
-suggests that abnormal behaviors get increasingly unlikely to require a
-larger number of branch hit.
+As the interestingness $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of an
+\emph{unobserved} behavior, there is no direct way to measure interestingness. 
 %
-The prime example is the branch hit count bucketing in AFL \cite{afl}, where the
-bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7, 8-15,
-...).
+However, the practice of untargeted fuzzing suggests that
+the resulting program behavior is unlikely to be \emph{unknown abnormal} if the
+mutation base is highly repetitive, as it commonly incorporates corpus
+minimization \cite{} and branch hit count buckets \cite{}.
+%
+The rationales are: (i) abnormal behaviors might have been already observed with
+fewer branch repetitions (i.e., unlikely \emph{abnormal}) and (ii) if so, it may
+correspond to pre-observed less-repetition counterparts (i.e., unlikely
+\emph{unknown}).
+
+
+%The prime example is the branch hit count bucketing in AFL \cite{afl}, where
+%the bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7,
+%8-15, ...).
+
+%However, the practice of untargeted fuzzing in recent years suggests that
+%abnormal behaviors get increasingly unlikely to require a larger number of
+%branch hit.
+%
+%The prime example is the branch hit count bucketing in AFL \cite{afl}, where
+%the bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7,
+%8-15, ...).
 %; all hit counts are treated the same within a bucket.
 %
 %This is also intuitive because if a certain abnormal behavior can manifest at a
