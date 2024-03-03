@@ -78,9 +78,11 @@
   fuzzing quality. 
   
   In this work, we propose \emph{logic state coverage} as a proxy metric to
-  count observed interesting behaviors. A logic state distinguishes interesting
-  behaviors in a finer granularity than the less interesting ones, making the
-  amount of logic state coverage (i.e., observed logic states) directly
+  count observed interesting behaviors. A logic state is a set of satisfied
+  branches during one execution, where logic state coverage is the count of
+  \emph{individual} observed logic states during a fuzzing campaign. A logic
+  state distinguishes less repetitive (i.e., more interesting) behaviors in a
+  finer granularity, making the amount of logic state coverage reliably 
   proportional to the number of observed interesting behaviors.
   % 
   We implemented logic state coverage using a bloom filter and reevaluated
@@ -186,10 +188,10 @@ As it is challenging to directly count interesting program behaviors when
 fuzzing produces hundreds of them every second, we propose \emph{logic state
 coverage} as a feasible proxy metric of interesting behaviors. A logic state is
 a set of all satisfied branches during one execution, where logic state coverage
-is defined as the \emph{individual count} of all observed distinct logic states.
-One logic state represents \emph{fewer} behaviors if they are \emph{more
-interesting} (i.e., likely relating to unknown abnormal behaviors), meaning that
-observing more interesting behaviors is strongly reflected on larger logic state
+is the \emph{individual count} of all observed distinct logic states during a
+fuzzing campaign. Logic states represent more \emph{interesting} behaviors
+(i.e., relating to unknown abnormal behaviors) in a finer granularity, meaning
+that observing more interesting behaviors is reliably reflected to larger
 coverage. 
 
 % design: edge bitmap rehashing
@@ -296,16 +298,16 @@ unknown abnormal behaviors after mutation).
 We first make a clear distinction between \emph{new} and \emph{unknown} 
 behaviors. \emph{New} behaviors are, as the name suggests, simply the behaviors 
 that have not been observed until now. On the other hand, \emph{unknown}
-behaviors are a subset of the \emph{new} behaviors \emph{not equivalent} to any
-observed behaviors. In particular, an abnormal behavior is \emph{unknown} if it
-is not equivalent to any observed abnormal behaviors (e.g., a unique root
-cause). Formally, if $\mathrm{U}$ and $\mathrm{N}$ are the sets of
+behaviors are a subset of the \emph{new} behaviors that are \emph{not
+equivalent} to any observed behaviors. In particular, an abnormal behavior is
+\emph{unknown} if it is not equivalent to any observed abnormal behaviors (e.g.,
+a unique root cause). Formally, if $\mathrm{U}$ and $\mathrm{N}$ are the sets of
 \underline{\textbf{u}}nknown and \underline{\textbf{n}}ew behaviors,
-respectively, $\mathrm{U} \subset \mathrm{N}$.
+$\mathrm{U} \subset \mathrm{N}$.
 
 \pp{Formal justification}
 %
-The approach of untargeted fuzzing can be described formally as follows. Upon
+The approach of untargeted fuzzing can be formally described as follows. Upon
 executing a mutated input, let $P(\mathrm{N})$ be the probability of observing a
 \underline{\textbf{n}}ew behavior as a result of execution. Then, the
 probability of discovering \underline{\textbf{u}}nknown
@@ -336,13 +338,13 @@ As the interestingness $P(\mathrm{UA} \mid \mathrm{N})$ is the expectation of an
 %
 However, the practice of untargeted fuzzing suggests that
 the resulting program behavior is unlikely to be \emph{unknown abnormal} if the
-mutation base is highly repetitive, as it commonly incorporates corpus
+mutation base is highly repetitive, as fuzzers commonly incorporate corpus
 minimization \cite{todo} and branch hit count buckets \cite{todo}.
 %
-The rationales are: (i) abnormal behaviors might have been already observed with
-fewer branch repetitions (i.e., unlikely \emph{abnormal}) and (ii) if so, it may
-correspond to pre-observed less-repetition counterparts (i.e., unlikely
-\emph{unknown}).
+The rationales are: (i) if a fewer repetition was normal, more repetition is
+also likely normal (i.e., unlikely \emph{abnormal}) and (ii) even if it was
+abnormal, it may correspond to pre-observed less-repetition counterparts (i.e.,
+unlikely \emph{unknown}).
 
 %However, the practice of untargeted fuzzing in recent years suggests that
 %abnormal behaviors get increasingly unlikely to require a larger number of
@@ -437,8 +439,8 @@ state.
 %
 \emph{Logic state coverage} is \emph{the count of observed distinctive logic
 states during fuzzing}, where a logic state is called \emph{covered} when
-fuzzing observed a program behavior from the logic state (i.e., triggering all
-and only the branches in the logic state). 
+fuzzing observed a program behavior that belongs to such a logic state (i.e.,
+triggering all and only the branches in the logic state). 
 %
 Analogically, logic state coverage represents the \emph{covered area} of a logic
 space.
