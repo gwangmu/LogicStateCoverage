@@ -92,12 +92,19 @@ PreservedAnalyses LSCovPass::run(Module &M, ModuleAnalysisManager &MAM) {
       Value *MapPtrIdx = IRB.CreateGEP(Int8Ty, MapPtr, 
           IRB.CreateXor(PrevLocCasted, CurLoc));
 
+#ifdef LSCOV_BUCKET
       /* Update bitmap */
       LoadInst *Counter = IRB.CreateLoad(Int8Ty, MapPtrIdx);
       Counter->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
       Value *Incr = IRB.CreateAdd(Counter, ConstantInt::get(Int8Ty, 1));
       IRB.CreateStore(Incr, MapPtrIdx)
           ->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
+#else
+      /* Set bitmap */
+      Constant *ConstOne = ConstantInt::get(Int8Ty, 1);
+      IRB.CreateStore(ConstOne, MapPtrIdx)
+          ->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
+#endif
 
       /* Set prev_loc to cur_loc >> 1 */
       StoreInst *Store =

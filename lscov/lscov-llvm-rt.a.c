@@ -32,20 +32,23 @@ void __lscov_end_exec() {
   /* Mark that it notified this termination to the daemon. */
   *__lscov_area_ptr = 0x80;
 
-  /* Mark the end of recording, if there was no crash. */
   int _sema_rd_val;
   sem_getvalue(__lscov_sema_rd, &_sema_rd_val);
-  if (_sema_rd_val)
+  if (_sema_rd_val) {
+    SAYF("_sema_rd_val: %d\n", _sema_rd_val);
     assert(0 && "non-zero _sema_rd_val");
+  }
+
+  /* Mark the end of recording. */
   sem_post(__lscov_sema_rd);
 }
 
 void __lscov_start_exec() {
-  /* Wait until SHM is ready */
-  sem_wait(__lscov_sema_dr);
-
   /* Mark this hit count as unnotified yet to the daemon (0x01). */
   *__lscov_area_ptr = 0x81;
+
+  /* Wait until SHM is ready */
+  sem_wait(__lscov_sema_dr);
 }
 
 /* Finalization (per execution) */

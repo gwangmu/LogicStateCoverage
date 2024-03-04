@@ -105,14 +105,19 @@ static inline int hcount_wait_until_ready() {
 /* Bucketing excerpted from AFL. It was much faster than my implementation,
  * unsurprisingly */
 
-//#define BUCKET_1
-
+#ifdef LSCOV_BUCKET
 #ifdef BUCKET_1
 static const u8 count_bucket_lookup8[256] = {
   [0]           = 0,
   [1 ... 255]   = 1,
 };
-#elif defined BUCKET_LOG2_LOG4
+#elif defined BUCKET_LOG2_LOG3p2
+static const u8 count_bucket_lookup8[256] = {
+  [0]           = 0,    // No hit
+  [1 ... 8]     = 1,    // Hit
+  [9 ... 255]   = 2,    // Repetition
+};
+#elif defined BUCKET_LOG2_LOG4p1_p1
 static const u8 count_bucket_lookup8[256] = {
   [0]           = 0,    // No hit
   [1 ... 3]     = 1,    // Hit
@@ -134,8 +139,10 @@ static const u8 count_bucket_lookup8[256] = {
 #endif
 
 static u16 count_bucket_lookup16[65536];
+#endif
 
 static inline void hcount_bucket_to_lstate(u8* lstate) {
+#ifdef LSCOV_BUCKET
   u32 i = LSTATE_SIZE >> 3;
   u64 *mem = (u64 *)hit_counts;
   u64 *dest = (u64 *)lstate;
@@ -150,11 +157,16 @@ static inline void hcount_bucket_to_lstate(u8* lstate) {
       dest16[1] = count_bucket_lookup16[mem16[1]];
       dest16[2] = count_bucket_lookup16[mem16[2]];
       dest16[3] = count_bucket_lookup16[mem16[3]];
+    } else {
+      *dest = 0;
     }
 
     mem++;
     dest++;
   }
+#else
+  memcpy(lstate, hit_counts, LSTATE_SIZE);
+#endif
 }
 
 void hcount_nuke() {
@@ -204,12 +216,14 @@ void hcount_init() {
   /* Initialize 'hit_counts'. */
   memset(hit_counts, 0, LSTATE_SIZE);
 
+#ifdef LSCOV_BUCKET
   /* Initialize 'count_bucket_lookup16' */
   for (u32 b1 = 0; b1 < 256; b1++) 
     for (u32 b2 = 0; b2 < 256; b2++)
       count_bucket_lookup16[(b1 << 8) + b2] = 
         (count_bucket_lookup8[b1] << 8) |
         count_bucket_lookup8[b2];
+#endif
 }
 
 

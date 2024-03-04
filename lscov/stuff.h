@@ -269,3 +269,8 @@ typedef int64_t  s64;
 
 #define unlikely(_x)  __builtin_expect(!!(_x), 0)
 #define likely(_x)  __builtin_expect(!!(_x), 1)
+
+/* Use buckets? */
+
+//#define LSCOV_BUCKET
+#define BUCKET_1
