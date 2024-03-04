@@ -70,7 +70,7 @@
   inconclusive, exaggerated, or even counter-intuitive results.
   
   To establish a more reliable quality metric, we first note that fuzzing 
-  aims to reduce the number of unknown \emph{abnormal} behaviors by observing
+  aims to reduce the number of \emph{unknown abnormal} behaviors by observing
   more \emph{interesting} (i.e., relating to unknown abnormal) behaviors. The
   more interesting behaviors a fuzzer has observed, the stronger guarantee it
   can provide about the absence of unknown abnormal behaviors. This suggests
@@ -78,9 +78,11 @@
   fuzzing quality. 
   
   In this work, we propose \emph{logic state coverage} as a proxy metric to
-  count observed interesting behaviors. A logic state distinguishes interesting
-  behaviors in a finer granularity than the less interesting ones, making the
-  amount of logic state coverage (i.e., observed logic states) directly
+  count observed interesting behaviors. A logic state is a set of satisfied
+  branches during one execution, where logic state coverage is the count of
+  \emph{individual} observed logic states during a fuzzing campaign. A logic
+  state distinguishes less repetitive (i.e., more interesting) behaviors in a
+  finer granularity, making the amount of logic state coverage reliably 
   proportional to the number of observed interesting behaviors.
   % 
   We implemented logic state coverage using a bloom filter and reevaluated
@@ -185,12 +187,11 @@ abnormal behaviors.
 As it is challenging to directly count interesting program behaviors when
 fuzzing produces hundreds of them every second, we propose \emph{logic state
 coverage} as a feasible proxy metric of interesting behaviors. A logic state is
-a set of all satisfied branches during one execution, bucketed by their hit
-counts (larger buckets for higher hit counts). Logic state coverage then
-\emph{individually counts} all observed distinct logic states.  One logic state
-represents \emph{fewer} program behaviors if they are \emph{more interesting}
-(i.e., likely relating to unknown abnormal behaviors), meaning that observing
-more interesting behaviors is strongly reflected on larger logic state coverage. 
+a set of all satisfied branches during one execution, where logic state coverage
+is the \emph{individual count} of all observed distinct logic states during a
+fuzzing campaign. Logic states represent \emph{interesting} behaviors (i.e.,
+relating to unknown abnormal behaviors) in a finer granularity, meaning that
+observing more interesting behaviors is reliably reflected to larger coverage. 
 
 % design: edge bitmap rehashing
 %  - idea
@@ -288,44 +289,74 @@ $(\mathcal{T}_b, \mathcal{T}_e)$ to a certain program behavior $h$.
 Fuzzing, as a form of software testing, aims at minimizing the number of unknown
 abnormal program behaviors. \emph{Untargeted} fuzzing addresses this goal by:
 (i) investigating as many \emph{new} program behaviors as possible and (ii)
-keeping the new behaviors \emph{more interesting} (i.e., more likely revealing
-unknown abnormal behaviors).
+keeping the mutation base input \emph{interesting} (i.e., more likely revealing
+unknown abnormal behaviors after mutation).
+
+\pp{New vs. unknown behaviors}
+%
+We first make a clear distinction between \emph{new} and \emph{unknown} 
+behaviors. \emph{New} behaviors are, as the name suggests, simply the behaviors 
+that have not been observed until now. On the other hand, \emph{unknown}
+behaviors are a subset of the \emph{new} behaviors that are \emph{not
+equivalent} to any observed behaviors. In particular, an abnormal behavior is
+\emph{unknown} if it is not equivalent to any observed abnormal behaviors (e.g.,
+a unique root cause). Formally, if $\mathrm{U}$ and $\mathrm{N}$ are the sets of
+\underline{\textbf{u}}nknown and \underline{\textbf{n}}ew behaviors,
+$\mathrm{U} \subset \mathrm{N}$.
 
 \pp{Formal justification}
 %
-The approach can be described formally as follows. Let the
-\emph{interestingness} of a program behavior be $P(\mathrm{abnormal})$, the
-expectation of a certain program behavior being abnormal before observing
-it.\footnote{See \autoref{s:disc} for the compatibility of this definition and
-the conventional meaning of interestingness in untargeted fuzzing.} Furthermore,
-let $P(\mathrm{new})$ be the probability of a new behavior in the next
-execution.  Then, the probability of discovering unknown abnormal behavior in
-the next execution is
+The approach of untargeted fuzzing can be formally described as follows. Upon
+executing a mutated input, let $\Pr(\mathrm{N})$ be the probability of observing a
+\underline{\textbf{n}}ew behavior as a result of execution. Then, the
+probability of discovering \underline{\textbf{u}}nknown
+\underline{\textbf{a}}bnormal behavior $\Pr(\mathrm{UA}) := \Pr(\mathrm{U} \cap
+\mathrm{A})$ is
 %
-\begin{equation}
-  P(\mathrm{new} \cap \mathrm{abnormal}) = P(\mathrm{new}) \times P(\mathrm{abnormal} \mid \mathrm{new}).
-\end{equation}
+\begin{align}
+  \Pr(\mathrm{UA}) 
+      &= \Pr(\mathrm{N} \cap \mathrm{UA}) \tag{by $\mathrm{U} \subset \mathrm{N}$} \\
+      &= \Pr(\mathrm{N}) \cdot \Pr(\mathrm{UA} \mid \mathrm{N}) \tag{by chain rule}. 
+\end{align}
 
-In this formulation, untargeted fuzzing attempts to (i) increase
-$P(\mathrm{new})$ to investigate more program behaviors while (ii) keep 
-$P(\mathrm{abnormal} \mid \mathrm{new})$ as high as possible to ensure new
-behaviors interesting.
+Here, the second term $\Pr(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
+revealing an unknown abnormal behavior given a new behavior, which can be
+interpreted as the \emph{interestingness} of the mutation base. In other words,
+untargeted fuzzing attempts to (i) increase $\Pr(\mathrm{N})$ to investigate
+more program behaviors while (ii) keeping the interestingness $\Pr(\mathrm{UA}
+\mid \mathrm{N})$ high.
 %
-Notice that executing more inputs is not the same as observing more distinct
-behaviors, as inputs can exhibit the same behavior (e.g., the same
-early-termination).
+%Notice that executing more inputs is not the same as observing more distinct
+%behaviors, as inputs can exhibit the same behavior (e.g., the same
+%early-termination).
 
 \pp{Interestingness in practice}
 %
-As the interestingness $P(\mathrm{abnormal})$ depends on the expectation of an
-\emph{unobserved} behavior, there is no direct way to measure or formalize
-interestingness. However, the practice of untargeted fuzzing in recent years
-suggests that abnormal behaviors get increasingly unlikely to require a
-larger number of branch hit.
+As the interestingness $\Pr(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
+an \emph{unobserved} behavior, there is no direct way to measure
+interestingness. 
 %
-The prime example is the branch hit count bucketing in AFL \cite{afl}, where the
-bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7, 8-15,
-...).
+However, the common usage of corpus minimization \cite{todo} and branch hit
+count buckets \cite{todo} in untargeted fuzzing suggests that a program behavior
+is less likely to be \emph{unknown abnormal} (i.e., less interesting) if its
+mutation base input is highly repetitive.
+%in modern untargeted fuzzing.
+%
+The rationales are: (i) if a fewer repetition was normal,
+more repetition is also likely normal and (ii) even if it was abnormal, it is 
+not unknown if it corresponds to pre-observed less-repetition counterparts. 
+
+To generalize this practice from mutation base inputs to all inputs (i.e., all
+their program behaviors), a program behavior can be deemed less interesting if
+it include more repetitions.
+
+%However, the practice of untargeted fuzzing in recent years suggests that
+%abnormal behaviors get increasingly unlikely to require a larger number of
+%branch hit.
+%
+%The prime example is the branch hit count bucketing in AFL \cite{afl}, where
+%the bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7,
+%8-15, ...).
 %; all hit counts are treated the same within a bucket.
 %
 %This is also intuitive because if a certain abnormal behavior can manifest at a
@@ -337,7 +368,7 @@ bucket size gets larger roughly by the power of 2 (i.e., 1, 2, 3, 4-7, 8-15,
 %behavior when $X=n$ is;
 %%
 %\begin{equation}
-%  P(\mathrm{abnormal} \mid X=n) \propto 1/n.
+%  \Pr(\mathrm{abnormal} \mid X=n) \propto 1/n.
 %\end{equation}
 
 %Notice that this formulation only holds when $n \ge 1$, meaning that it does not
@@ -390,19 +421,13 @@ completeness that indirectly counts interesting program behaviors.
 \pp{Logic state and logic space}
 %
 A \emph{logic state} $l$ is a set of all satisfied branches during execution,
-each of which is paired with the integer logarithm of the corresponding branch
-hit count. Formally, given a branch history $\mathcal{T}_b$ of an execution,
+which is essentially the order-ignored version of a branch history. Formally,
+given a branch history $\mathcal{T}_b$ of an execution,
 %
 \begin{equation}
 \label{e:ls}
-  l := \{(b, n(b)) \mid b \in \mathcal{T}_b\},
+  l := \{b \mid b \in \mathcal{T}_b\}.
 \end{equation}
-
-\noindent where $n(b) = \lfloor \log_2{m(b)} \rfloor$ and $m(b)$ is the hit
-count of a branch $b$ in $\mathcal{T}_b$.  Notice that, as it gets larger, a
-branch hit count $m(b)$ shares the same integer "bucket" $n(b)$ with
-exponentially more hit counts (i.e., $n(b)=x \iff m(b) \in \{2^x, ...,
-2^{x+1}-1\}$).
 
 A \emph{logic space} $\mathbb{L}$, then, is a set of all possible logic states
 of a given program. 
@@ -418,8 +443,8 @@ state.
 %
 \emph{Logic state coverage} is \emph{the count of observed distinctive logic
 states during fuzzing}, where a logic state is called \emph{covered} when
-fuzzing observed a program behavior from the logic state (i.e., triggering all
-and only the branches in the logic state). 
+fuzzing observed a program behavior that belongs to such a logic state (i.e.,
+triggering all and only the branches in the logic state). 
 %
 Analogically, logic state coverage represents the \emph{covered area} of a logic
 space.
@@ -434,10 +459,10 @@ of them as it is heavily affected by the previous observation.
 As shown in \autoref{f:prog-to-logic}, a logic state (i.e., a partition in the
 program behavior space) may contain various program behaviors, suggesting a
 single covered logic state may encompass several different behaviors. However,
-in \autoref{s:prop}, we argue that a logic state is representative of
-interesting program behaviors as it (i) weighs interesting program behaviors
-over uninteresting ones and (ii) only contains the program behaviors of the same
-normality.
+in \autoref{s:prop}, we explain that a logic state is representative of
+interesting program behaviors as it (i) reflects the interestingness of
+underlying program behaviors and (ii) only contains the program behaviors of the
+same normality.
 
 
 \section{Representativeness of Logic States}
@@ -474,8 +499,8 @@ cannot represent that of other behaviors in the same logic state.
   \includegraphics[width=\columnwidth]{images/repr.pdf}
   \caption{Example control flow graph and the number of program behaviors
   (numbers in a grid) given two branch hit counts. $m(b)$ denotes the hit count
-  of the branch $b$. Dotted lines demarcate the start of a new power-of-2 branch
-  hit count.}
+  of the branch $b$. Dotted lines demarcate whether the corresponding branch is
+  hit or not (i.e., presence in a logic state).}
   % Each region surrounded by dotted lines constitutes one logic state.}
   \label{f:repr}
 \end{figure}
@@ -483,12 +508,9 @@ cannot represent that of other behaviors in the same logic state.
 \subsection{Interestingness}
 \label{s:prop:repr}
 
-Logic states distinguish the program behaviors with smaller branch hit counts
-in finer details (i.e., distinguishing \emph{interesting} behaviors) but
-coalesce the behaviors with larger hit counts (i.e., avoiding
-over-representation of \emph{uninteresting} behaviors). This results in a larger
-number of covered logic states (i.e., larger logic state coverage) when the
-observed program behaviors are more interesting.
+Logic states distinguish the program behaviors with less branch repetitions in a
+finer granularity, resulting in a higher number of covered logic states (i.e.,
+larger coverage) as the observed program behaviors are more interesting.
 
 %This is because logic
 %states lump together larger hit counts into fewer integer buckets
@@ -496,40 +518,40 @@ observed program behaviors are more interesting.
 
 \autoref{f:repr} shows an example control-flow graph and the number of possible
 program behaviors for each pair $(m(b_1), m(b_2))$, where $m(b)$ is the hit
-count of the branch $b$. For example, there are 
-two possible program behaviors, $b_2$ after $b_1$ or $b_1$ after
-$b_2$, when $(m(b_1), m(b_2))=(1, 1)$. 
+count of the branch $b$. For example, there are two possible program behaviors,
+$b_2$ after $b_1$ or $b_1$ after $b_2$, when $(m(b_1), m(b_2))=(1, 1)$. 
 %Notice that the back edge $b_3$ is always taken $m(b_1)+m(b_2)$ times by the shape of the graph.
 %
-The dotted lines demarcate the beginning of a new power-of-2 branch hit count
-(e.g., 1, 2, 4, ...), where the hit counts between them share the same integer
-bucket. Each region surrounded by dotted lines constitutes \emph{one logic
-state}, as all contained program behaviors fall into the same integer bucket
-in every branch.
+The dotted lines demarcate whether the corresponding branch is hit or not, which
+also corresponds to the presence of the branch in a logic state.
+%the beginning of a new power-of-2 branch hit count
+%(e.g., 1, 2, 4, ...), where the hit counts between them share the same integer
+%bucket. 
+The surrounded region has the same set of satisfied branches, constituting
+\emph{one logic state}.
 
-%Notice that a program behavior is deemed more interesting as it exhibits
-%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
-As shown, a logic state distinguishes more interesting program behaviors in a
-finer granularity, representing fewer behaviors with smaller branch hit counts
-(i.e., bottom left). On the other hand, it coalesces more behaviors when
-the branch hit counts get larger, where individual behaviors are deemed less
-interesting. 
-%
-This results in a larger number of covered logic states when the observed
-behaviors are more interesting (e.g., three program behaviors result in
-three different logic states when $m(b_3)<2$) while the opposite happens when
-they are not (e.g., a total of 11,950 behaviors fall into \emph{one} logic state
-when $4 \le m(b_1) < 8$ and $4 \le m(b_2) < 8$).
+As shown, the program behaviors with more repetitive branches are grouped with
+more program behaviors as one logic state.  For example, a program behavior
+having only one repetitive branch (either $b_1$ or $b_2$) falls into the slim
+logic states adjacent to axis (bottom right and top left), while a behavior
+having two repetitive branches (both $b_1$ and $b_2$) falls into the large logic
+state (top right). This results in observing repetitive (i.e., less interesting)
+program states represented by fewer logic states, leading to smaller logic state
+coverage. 
 
-%\autoref{f:repr} reveals two important properties of logic states. First, a
-%logic state distinguishes interesting program behaviors with smaller branch hit
-%counts in a finer granularity. For example, a logic state represents
-%exponentially fewer program behaviors as $m(b_1)$ and $m(b_2)$ approach to 1.
-%Second, a logic state coalesces less interesting program behaviors that require
-%high branch hit counts or exhibit specific branch ordering, avoiding
-%over-representation of them. For example, all 11,950 program behaviors
-%exhibiting different branch ordering with $4 \le m(A) \le 7$ and $4 \le m(B) \le
-%7$ are lumped into \emph{one} logic state.
+%%Notice that a program behavior is deemed more interesting as it exhibits
+%%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
+%As shown, a logic state distinguishes more interesting program behaviors in a
+%finer granularity, representing fewer behaviors with smaller branch hit counts
+%(i.e., bottom left). On the other hand, it coalesces more behaviors when
+%the branch hit counts get larger, where individual behaviors are deemed less
+%interesting. 
+%%
+%This results in a larger number of covered logic states when the observed
+%behaviors are more interesting (e.g., three program behaviors result in
+%three different logic states when $m(b_3)<2$) while the opposite happens when
+%they are not (e.g., a total of 11,950 behaviors fall into \emph{one} logic state
+%when $4 \le m(b_1) < 8$ and $4 \le m(b_2) < 8$).
 
 \begin{figure}[t]
   \centering
@@ -802,13 +824,12 @@ and elaborate on details (\autoref{s:design:rec} and \ref{s:design:count}).
 %  - (3) periodically estimate the # of distinct edge traces = logic states.
 
 \autoref{f:design} illustrates the workflow of logic state coverage
-measurement. Similar to edge coverage, it first records and buckets the branch
-hit counts of every execution, yielding a \emph{logic state} as a result 
-(\autoref{s:design:rec}). Then, it adds the recorded logic state to a 
-\emph{bloom filter} that represents a set of observed logic states, by setting
-the hash indices (\autoref{s:design:up}).  Finally, the measurement periodically
-reads off the bloom filter to count the number of observed logic states
-(\autoref{s:design:count}).
+measurement. Similar to edge coverage, it first records the \emph{logic state}
+of each execution via instrumentation (\autoref{s:design:rec}). Then, it adds
+the recorded logic state to a \emph{bloom filter} that represents a set of
+observed logic states, by setting the hash indices (\autoref{s:design:up}).
+Finally, the measurement periodically reads off the bloom filter to count the
+number of observed logic states (\autoref{s:design:count}).
 
 
 \subsection{Recording a Logic State}
@@ -900,38 +921,38 @@ of other behaviors \emph{on course for} such.
 %branches but only some of them satisfy exceptions (e.g., due to different data
 %values).
 
-\pp{Interestingness: definition vs. convention}
+%\pp{Interestingness: definition vs. convention}
+%%
+%Although the \emph{interestingness} has been widely discussed in recent
+%untargeted fuzzing, it has never been clearly defined. The conventional
+%understanding is a property of an \emph{input} having \emph{new
+%execution paths} in its resulting behavior. In comparison, this work
+%defines interestingness as a property of a \emph{program behavior} indicating 
+%the \emph{expectation} of being an abnormal behavior. 
 %
-Although the \emph{interestingness} has been widely discussed in recent
-untargeted fuzzing, it has never been clearly defined. The conventional
-understanding is a property of an \emph{input} having \emph{new
-execution paths} in its resulting behavior. In comparison, this work
-defines interestingness as a property of a \emph{program behavior} indicating 
-the \emph{expectation} of being an abnormal behavior. 
-
-Despite an apparent difference between them, the definition \emph{subsumes} the
-convention because if an input discovered a new path (conventional
-interesting), its behavior would have a higher expectation to be abnormal than
-the ones only exhibiting previously checked paths (defined interesting). 
-%
-Still, there are some disagreements between the definition and the convention,
-such as when a behavior \emph{contains} another known abnormal behavior without
-discovering any new path. The definition may be refined to resolve such
-disagreements.
+%Despite an apparent difference between them, the definition \emph{subsumes} the
+%convention because if an input discovered a new path (conventional
+%interesting), its behavior would have a higher expectation to be abnormal than
+%the ones only exhibiting previously checked paths (defined interesting). 
+%%
+%Still, there are some disagreements between the definition and the convention,
+%such as when a behavior \emph{contains} another known abnormal behavior without
+%discovering any new path. The definition may be refined to resolve such
+%disagreements.
 
 \pp{Completeness of targeted fuzzing}
 %
 The completeness of untargeted fuzzing hinges on the observation that the more
 program behavior it checks, the less abnormal program behaviors are expected to
-be left. This roughly translates to $P(\mathrm{abnormal} \mid \mathrm{new})$
+be left. This roughly translates to $\Pr(\mathrm{abnormal} \mid \mathrm{new})$
 being equal throughout a fuzzing campaign.
-%, whereby $P(\mathrm{new} \cap
-%\mathrm{abnormal})$ then majorly depends on how high $P(\mathrm{new})$ is;
+%, whereby $\Pr(\mathrm{new} \cap
+%\mathrm{abnormal})$ then majorly depends on how high $\Pr(\mathrm{new})$ is;
 %proportional to the number of observed program behaviors per time.
 %
 However, targeted fuzzing (e.g., directed or regression fuzzing)
 \emph{prioritizes} code that likely leads to abnormal behaviors, which may result
-in a larger $P(\mathrm{abnormal} \mid \mathrm{new})$ at the beginning that slowly
+in a larger $\Pr(\mathrm{abnormal} \mid \mathrm{new})$ at the beginning that slowly
 decreases over time. 
 
 This affects the fundamental observation for completeness because targeted
@@ -939,7 +960,7 @@ fuzzers may reveal more abnormal behaviors even after observing fewer program
 behaviors.
 %
 One possible remedy is refining interestingness to incorporate a complete set of
-factors that affects $P(\mathrm{abnormal})$ (e.g., freshness of code).  A
+factors that affects $\Pr(\mathrm{abnormal})$ (e.g., freshness of code).  A
 further investigation on interestingness is required.
 
 
