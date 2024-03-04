@@ -7,7 +7,6 @@
  * See "llvm_mode/afl-llvm-rt.o.c" for the reference implementation.
  */
 
-#include <assert.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -32,15 +31,11 @@ void __lscov_start_exec() {
   /* Mark this hit count as unnotified yet to the daemon (0x01). */
   *__lscov_area_ptr = 0x81;
 
-  int _sema_dr_val;
-  sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
-  if (_sema_dr_val > 1) {
-    SAYF("_sema_dr_val: %d\n", _sema_dr_val);
-    assert(0 && "_sema_dr_val > 1");
-  }
-
   /* Wait until SHM is ready */
   sem_wait(__lscov_sema_dr);
+
+  /* Clear area. */
+  memset(__lscov_area_ptr+1, 0, LSTATE_SIZE-1);
 }
 
 void __lscov_end_exec() {
@@ -109,7 +104,7 @@ void __lscov_main(void) {
     int _sema_dr_val;
     sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
     if (_sema_dr_val > 1)
-      assert(0 && "_sema_dr_val > 1");
+      LSCOV_ABORT("(lscov) _sema_dr_val (=%d) > 1", _sema_dr_val);
 
     __lscov_start_exec();
 
@@ -118,7 +113,7 @@ void __lscov_main(void) {
     for (int i = 1; i < (LSTATE_SIZE >> 6); i++)
       _test_hc |= __lscov_area_ptr[i << 6];
     if (_test_hc) 
-      assert(0 && "tainted hit counts");
+      LSCOV_ABORT("(lscov) tainted hit counts");
   }
 }
 

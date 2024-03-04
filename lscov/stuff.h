@@ -255,6 +255,15 @@ typedef int64_t  s64;
     if (res < 0) PFATAL(x); else FATAL(x); \
   } while (0)
 
+/* Custom FATAL() for debugging. */
+
+#define LSCOV_ABORT(x...) do { \
+    printf(x); \
+    FILE *fout = fopen(".lscov", "a"); \
+    fprintf(fout, x); \
+    abort(); \
+  } while (0)
+
 /* Random number */
 
 #define RANDOM(x) (random() % (x))

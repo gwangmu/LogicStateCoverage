@@ -178,9 +178,11 @@ static inline void hcount_bucket_to_lstate(u8* lstate) {
 #endif
 }
 
-void hcount_nuke() {
-  memset(hit_counts+1, 0, LSTATE_SIZE-1);
-  sem_post(sema_dr);
+void hcount_mark_read() {
+  int _sema_dr_val;
+  sem_getvalue(sema_dr, &_sema_dr_val);
+  if (!_sema_dr_val) 
+    sem_post(sema_dr);
 }
 
 void hcount_stop() {
@@ -480,7 +482,7 @@ void lscov_loop() {
             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
       hcount_bucket_to_lstate(lstate);
-      hcount_nuke();
+      hcount_mark_read();
 
       /* Set the hash indices of the logic state to 1 in the filter. */
       for (int h = 0; h < num_hashes; h++) {
