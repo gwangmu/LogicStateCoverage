@@ -28,36 +28,33 @@ sem_t*       __lscov_sema_rd;
 sem_t*       __lscov_sema_dr;
 
 
+void __lscov_start_exec() {
+  /* Mark this hit count as unnotified yet to the daemon (0x01). */
+  *__lscov_area_ptr = 0x81;
+
+  int _sema_dr_val;
+  sem_getvalue(__lscov_sema_dr, &_sema_dr_val);
+  if (_sema_dr_val > 1) {
+    SAYF("_sema_dr_val: %d\n", _sema_dr_val);
+    assert(0 && "_sema_dr_val > 1");
+  }
+
+  /* Wait until SHM is ready */
+  sem_wait(__lscov_sema_dr);
+}
+
 void __lscov_end_exec() {
   /* Mark that it notified this termination to the daemon. */
   *__lscov_area_ptr = 0x80;
 
   int _sema_rd_val;
   sem_getvalue(__lscov_sema_rd, &_sema_rd_val);
-  if (_sema_rd_val) {
-    SAYF("_sema_rd_val: %d\n", _sema_rd_val);
-    assert(0 && "non-zero _sema_rd_val");
+  if (!_sema_rd_val) {
+    /* Mark the end of recording. */
+    sem_post(__lscov_sema_rd);
   }
-
-  /* Mark the end of recording. */
-  sem_post(__lscov_sema_rd);
 }
 
-void __lscov_start_exec() {
-  /* Mark this hit count as unnotified yet to the daemon (0x01). */
-  *__lscov_area_ptr = 0x81;
-
-  /* Wait until SHM is ready */
-  sem_wait(__lscov_sema_dr);
-}
-
-/* Finalization (per execution) */
-
-__attribute__((destructor(CONST_PRIO))) 
-void __lscov_fin(void) {
-  if (__lscov_sema_rd) 
-    __lscov_end_exec();
-}
 
 /* Initialization (upon starting) */
 
@@ -123,4 +120,12 @@ void __lscov_main(void) {
     if (_test_hc) 
       assert(0 && "tainted hit counts");
   }
+}
+
+/* Finalization (per execution) */
+
+__attribute__((destructor(CONST_PRIO))) 
+void __lscov_fin(void) {
+  if (__lscov_sema_rd) 
+    __lscov_end_exec();
 }

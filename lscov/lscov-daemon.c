@@ -99,7 +99,8 @@ static inline int hcount_wait_until_ready() {
     assert(0 && "_sema_rd_val > 1");
     FATAL("_sema_rd_val: %d", _sema_rd_val);
   }
-  return sem_timedwait(sema_rd, &loop_timeout);
+  //return sem_timedwait(sema_rd, &loop_timeout);
+  return sem_wait(sema_rd);
 }
 
 /* Bucketing excerpted from AFL. It was much faster than my implementation,
@@ -166,8 +167,8 @@ static inline void hcount_bucket_to_lstate(u8* lstate) {
   }
 #else
   /* It feels wasteful as 7/8 of the bits are 0, but it may be better than
-   * compacting bits as it requires one load operation and one shift operations
-   * during execution. We'll see which is better tho. */ 
+   * compacting bits as it requires two additional operations (i.e., load and
+   * shift) during execution. I need to check which is better soon tho. */ 
 
   memcpy(lstate, hit_counts, LSTATE_SIZE);
 #endif
@@ -336,7 +337,6 @@ u32 bfilter_calc_cardinality(u32 num_1s) {
     has_divisor = 1;
   }
 
-  // FIXME: replacing 'log' with a faster one?
   double dividend = log(1.0 - (double)num_1s/bfilter_size_bits);
   u32 cov = (u32)(dividend / divisor);
 
@@ -453,6 +453,7 @@ void sem_print_val(const char *when) {
   sem_getvalue(sema_dr, &_sema_dr_val);
   SAYF("[%s] rd:%d, dr:%d\n", when, _sema_rd_val, _sema_dr_val);
 }
+/* Debug */
 
 void lscov_loop() {
   while (1) {
@@ -460,9 +461,6 @@ void lscov_loop() {
 
     /* Update the filter. */
     if (!sem_rd_ret) {
-#ifdef DEBUG_RECEIVE_HCOUNT
-      ACTF("Received new hit counts.");
-#endif
       last_exec_count++;
 
       /* Bucketize the hit counts, making a logic state. */
