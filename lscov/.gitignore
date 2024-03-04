@@ -1,3 +1,5 @@
 build
 lscov.out
 llvm
+*.csv
+.*.swp

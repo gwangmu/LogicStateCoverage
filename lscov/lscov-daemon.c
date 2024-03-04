@@ -34,7 +34,6 @@ time_t      tallying_period = 10;      // Tallying period (in seconds)
 u32         bfilter_size = 0x4000000;  // Bloom filter size, in bytes
 u8          num_hashes = 4;            // Number of hashes
 const char* out_path = "lscov.csv";    // Output path
-const char* stat_path = "lsstat.csv";  // Statistics path
 u8          error_percent = 0;         // Error bound (0: disabled)
 
 /* State variables */
@@ -55,43 +54,27 @@ u32         exec_count_in_period;
 u8          stop_soon;
 
 
-// FIXME: bfilter --> limiting caching? other core?
-
 void out_init() {
   FILE *fout = fopen(out_path, "w");
 
   fprintf(fout, "Time,Coverage");
   if (error_percent > 0)
-    fprintf(fout, ",(Lower),(Upper)\n");
-  else
-    fprintf(fout, "\n");
+    fprintf(fout, ",(Lower),(Upper)");
+  fprintf(fout, ",Density,RateS(ins),RateE(per),RateS(avg),RateE(avg)\n");
 
   fclose(fout);
 }
 
-void stat_init() {
-  FILE *fout = fopen(stat_path, "w");
-  fprintf(fout, "Time,Coverage,Density,Rate(ins),Rate(per),Rate(avg)\n");
-  fclose(fout);
-}
-
-void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
+void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err, float density,
+    u32 rate_ins, float rate_per, u32 rate_avg, float rate_per_avg) {
   FILE *fout = fopen(out_path, "a");
 
   fprintf(fout, "%u,%u", time, cov);
   if (error_percent > 0)
-    fprintf(fout, ",%u,%u\n", lower_err, upper_err);
-  else
-    fprintf(fout, "\n");
-
-  fclose(fout);
-}
-
-void stat_append(u32 time, u32 cov, float density, u32 rate_ins, 
-    float rate_per, u32 rate_avg, float rate_per_avg) {
-  FILE *fout = fopen(stat_path, "a");
-  fprintf(fout, "%u,%u,%3.2f,%u,%3.2f,%u,%3.2f\n", time, cov, density,
+    fprintf(fout, ",%u,%u", lower_err, upper_err);
+  fprintf(fout, ",%u,%u,%3.2f,%u,%3.2f,%u,%3.2f\n", time, cov, density,
       rate_ins, rate_per, rate_avg, rate_per_avg);
+
   fclose(fout);
 }
 
@@ -309,6 +292,8 @@ u32 bfilter_get_hash_index(const u8 *lstate, u32 seed) {
 }
 
 void bfilter_set_1_by_index(u32 idx) {
+  // FIXME: bfilter --> limiting caching? other core?
+
   u32 byte_idx = idx >> 3;
   u8 bit_idx = idx & 0x07;
 
@@ -389,60 +374,41 @@ void tally_init() {
 }
 
 
-#define PRINT_STAT
 void lscov_init() {
-#ifdef PRINT_STAT
   setlocale(LC_NUMERIC, "en_US.UTF-8");
-#endif
 }
 
 void* lscov_report(void * _unused) {
+  static u32 prev_cov = 0;
+
   if (!start_time)
     return NULL;
-
-#ifdef PRINT_STAT
-  static u32 prev_cov = 0;
-#endif
 
   time_t prev_next_time = tally_update_next_time();
   if (stop_soon)
     prev_next_time = time(NULL);
 
-#ifdef DEBUG_CARDINALITY_TIME
-  /* Overhead measuring */
-  struct timespec t1, t2;
-  clock_gettime(CLOCK_MONOTONIC, &t1);
-#endif
-
   u32 prev_time = prev_next_time - start_time;
   u32 num_1s = bfilter_get_num_1s();
   u32 cov = bfilter_calc_cardinality(num_1s); 
   // TODO: calculate error bounds.
-
-#ifdef DEBUG_CARDINALITY_TIME
-  /* Overhead measuring */
-  clock_gettime(CLOCK_MONOTONIC, &t2);
-  ACTF("Cardinality calculation time: %.5f", 
-      ((double)t2.tv_sec + 1.0e-9 * t2.tv_nsec) - 
-      ((double)t1.tv_sec + 1.0e-9 * t1.tv_nsec)); 
-#endif
-
-  out_append(prev_time, cov, 0, 0);
-  OKF("Recorded new coverage. (time: %u, cov: %'u)", prev_time, cov);
   
-#ifdef PRINT_STAT
   float density = (float)num_1s / bfilter_size_bits * 100;
   u32 rate_ins = (u32)((cov - prev_cov) / tallying_period);
   float rate_per = (float)(cov - prev_cov) / exec_count_in_period * 100;
   u32 rate_avg = (u32)(cov / prev_time); 
   float rate_per_avg = (float)cov / exec_count * 100;
+
+#ifdef PRINT_STAT
   SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec [%3.2f%%], (avg) %'u ls/sec [%3.2f%%]\n",
       density, rate_ins, rate_per, rate_avg, rate_per_avg);
-  stat_append(prev_time, cov, density, rate_ins, rate_per, rate_avg, rate_per_avg);
-  prev_cov = cov;
 #endif
+
+  out_append(prev_time, cov, 0, 0, density, rate_ins, rate_per, rate_avg, rate_per_avg);
+  OKF("Recorded new coverage. (time: %u, cov: %'u)", prev_time, cov);
       
   exec_count_in_period = 0;
+  prev_cov = cov;
 
   return NULL;
 }
@@ -537,10 +503,6 @@ int main(int argc, char** argv) {
   out_init();
   hcount_init();
   bfilter_init();
-
-#ifdef PRINT_STAT
-  stat_init();
-#endif
 
   /* Wait until when a fuzzer starts. */
   ACTF("Waiting for a fuzzer...");
