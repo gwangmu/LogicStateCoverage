@@ -165,6 +165,10 @@ static inline void hcount_bucket_to_lstate(u8* lstate) {
     dest++;
   }
 #else
+  /* It feels wasteful as 7/8 of the bits are 0, but it may be better than
+   * compacting bits as it requires one load operation and one shift operations
+   * during execution. We'll see which is better tho. */ 
+
   memcpy(lstate, hit_counts, LSTATE_SIZE);
 #endif
 }
@@ -312,12 +316,11 @@ u32 bfilter_get_num_1s() {
   /* Tally 1s in the filter. */
   u32 num_1s = 0;
 
-  for (int i = 0; i < bfilter_size; i++) {
-    u8 _byte = bfilter[i];
-    while (_byte) {
-      num_1s += (_byte & 0x01);
-      _byte >>= 1;
-    }
+  u64 *bfilter64 = (u64 *)bfilter;
+  u32 rem_size = bfilter_size >> 3;
+  while (rem_size--) {
+    num_1s += __builtin_popcountll(*bfilter64);
+    bfilter64++;
   }
 
   return num_1s;

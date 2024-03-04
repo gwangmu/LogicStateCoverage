@@ -118,8 +118,8 @@ void __lscov_main(void) {
 
     /* Sanity check: should have a clear '__lscov_area_ptr'. */
     u8 _test_hc = 0;
-    for (int i = 1; i < (LSTATE_SIZE >> 4); i++)
-      _test_hc |= __lscov_area_ptr[i << 4];
+    for (int i = 1; i < (LSTATE_SIZE >> 6); i++)
+      _test_hc |= __lscov_area_ptr[i << 6];
     if (_test_hc) 
       assert(0 && "tainted hit counts");
   }
