@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <locale.h>
 #include <math.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <stdio.h>
@@ -48,7 +49,10 @@ u8*         bfilter;              // Bloom filter itself
 u32         bfilter_size_bits;    // Bloom filter size, in bits
 time_t      start_time;           // Measurement start time (in unix time)
 time_t      next_tallying_time;   // Next tallying time (in unix time)
-u32         last_exec_count;
+
+u32         exec_count;
+u32         exec_count_in_period;
+u8          stop_soon;
 
 
 // FIXME: bfilter --> limiting caching? other core?
@@ -84,10 +88,10 @@ void out_append(u32 time, u32 cov, u32 lower_err, u32 upper_err) {
 }
 
 void stat_append(u32 time, u32 cov, float density, u32 rate_ins, 
-    float rate_per, u32 rate_avg) {
+    float rate_per, u32 rate_avg, float rate_per_avg) {
   FILE *fout = fopen(stat_path, "a");
-  fprintf(fout, "%u,%u,%3.2f,%u,%3.2f,%u\n", time, cov, density,
-      rate_ins, rate_per, rate_avg);
+  fprintf(fout, "%u,%u,%3.2f,%u,%3.2f,%u,%3.2f\n", time, cov, density,
+      rate_ins, rate_per, rate_avg, rate_per_avg);
   fclose(fout);
 }
 
@@ -390,16 +394,16 @@ void lscov_init() {
 #endif
 }
 
-void lscov_report(int use_cur_time) {
+void* lscov_report(void * _unused) {
   if (!start_time)
-    return;
+    return NULL;
 
 #ifdef PRINT_STAT
   static u32 prev_cov = 0;
 #endif
 
   time_t prev_next_time = tally_update_next_time();
-  if (use_cur_time)
+  if (stop_soon)
     prev_next_time = time(NULL);
 
 #ifdef DEBUG_CARDINALITY_TIME
@@ -427,13 +431,18 @@ void lscov_report(int use_cur_time) {
 #ifdef PRINT_STAT
   float density = (float)num_1s / bfilter_size_bits * 100;
   u32 rate_ins = (u32)((cov - prev_cov) / tallying_period);
-  float rate_per = (float)(cov - prev_cov) / last_exec_count * 100;
+  float rate_per = (float)(cov - prev_cov) / exec_count_in_period * 100;
   u32 rate_avg = (u32)(cov / prev_time); 
-  SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec [%3.2f%%], (avg) %'u ls/sec\n",
-      density, rate_ins, rate_per, rate_avg);
-  stat_append(prev_time, cov, density, rate_ins, rate_per, rate_avg);
+  float rate_per_avg = (float)cov / exec_count * 100;
+  SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec [%3.2f%%], (avg) %'u ls/sec [%3.2f%%]\n",
+      density, rate_ins, rate_per, rate_avg, rate_per_avg);
+  stat_append(prev_time, cov, density, rate_ins, rate_per, rate_avg, rate_per_avg);
   prev_cov = cov;
 #endif
+      
+  exec_count_in_period = 0;
+
+  return NULL;
 }
 
 void lscov_wait() {
@@ -461,7 +470,8 @@ void lscov_loop() {
 
     /* Update the filter. */
     if (!sem_rd_ret) {
-      last_exec_count++;
+      exec_count++;
+      exec_count_in_period++;
 
       /* Bucketize the hit counts, making a logic state. */
       static u8* lstate;
@@ -481,15 +491,21 @@ void lscov_loop() {
 
     /* Report the coverage. */
     if (tally_is_next_time()) {
-      lscov_report(0);
-      last_exec_count = 0;
+      /* Tallying the bloom filter while (potentially) updating it may seem
+       * inaccurate, but I believe the cardinality calculation only yields a
+       * cardinality between the "previous" and "next" true value. So we're
+       * actually not losing anything by doing this. */
+
+      pthread_t _pt_dummy;
+      pthread_create(&_pt_dummy, NULL, &lscov_report, NULL);
     }
   }
 }
 
 void lscov_stop(int sig) {
   ACTF("Terminating lscov...");
-  lscov_report(1);
+  stop_soon = 1;
+  lscov_report(NULL);
   OKF("Good luck! %s", random_emoji());
 
   exit(0);
