@@ -1,4 +1,4 @@
-Time,Coverage,Density,RateS(ins),RateE(int),RateS(avg),RateE(avg)
+Time,Coverage,Density,RateS(ins),RateE(ins),RateS(avg),RateE(avg)
 10,10465,0.01,1046,38.99,1046,38.99
 20,17942,0.01,747,27.41,897,33.15
 30,25972,0.02,803,29.84,865,32.06
