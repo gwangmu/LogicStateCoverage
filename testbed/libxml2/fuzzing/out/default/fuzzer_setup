@@ -1,9 +1,0 @@
-# environment variables:
-AFL_CUSTOM_INFO_PROGRAM=./xmllint
-AFL_CUSTOM_INFO_PROGRAM_ARGV=@@
-AFL_CUSTOM_INFO_OUT=out/default
-AFL_PATH=/home/gwangmu/Projects/LogicStateCov/testbed/aflpp
-AFL_USE_ASAN=1
-AFL_USE_UBSAN=1
-# command line:
-'/home/gwangmu/Projects/LogicStateCov/testbed/aflpp/afl-fuzz' '-i' 'in' '-o' 'out' '--' './xmllint' '@@'
