@@ -922,10 +922,16 @@ extending logic state coverage or devising yet another coverage metric.
 It is crucial to notice that an abnormal behavior \emph{still follows the
 regular control flow up until any exception happens}. In \autoref{f:local}, the
 abnormal behavior (Behavior C) follows the same control flow to a normal
-behavior (Behavior B) until a use-after-free happens, which makes the behavior
-eventually abnormal unlike its normal counterpart. This means that, even though
-a behavior is known to be normal, it does not suggest much about the normality
-of other behaviors \emph{on course for} such.
+behavior (Behavior B) until use-after-free, which makes the behavior eventually
+abnormal unlike its normal counterpart. 
+%
+What it implies is that the executions that do not contribute to the growth of
+logic state coverage are not entirely wasteful executions because they are still
+possible to reveal abnormal behaviors. However, they are unlikely to do so, let
+alone revealing \emph{unknown} ones (\autoref{s:fuzz:unfuzz}).
+
+%This means that, even though a behavior is known to be normal, it does not
+%suggest much about the normality of other behaviors \emph{on course for} such.
 
 %At a high level, this can manifest when multiple inputs trigger the same
 %branches but only some of them satisfy exceptions (e.g., due to different data
@@ -950,28 +956,55 @@ of other behaviors \emph{on course for} such.
 %discovering any new path. The definition may be refined to resolve such
 %disagreements.
 
-\pp{Completeness of targeted fuzzing}
+%\pp{Completeness of targeted fuzzing}
+%%
+%The completeness of untargeted fuzzing hinges on the observation that the more
+%interesting program behavior it checks, the less unknown abnormal program
+%behaviors are expected to be left. This roughly translates to $\Pr(\mathrm{UA}
+%\mid \mathrm{N})$ being equal throughout a fuzzing campaign.
+%%, whereby $\Pr(\mathrm{new} \cap
+%%\mathrm{abnormal})$ then majorly depends on how high $\Pr(\mathrm{new})$ is;
+%%proportional to the number of observed program behaviors per time.
+%%
+%However, targeted fuzzing (e.g., directed or regression fuzzing)
+%\emph{prioritizes} code that likely leads to abnormal behaviors, which may result
+%in a larger $\Pr(\mathrm{UA} \mid \mathrm{N})$ at the beginning that slowly
+%decreases over time. 
 %
-The completeness of untargeted fuzzing hinges on the observation that the more
-program behavior it checks, the less abnormal program behaviors are expected to
-be left. This roughly translates to $\Pr(\mathrm{abnormal} \mid \mathrm{new})$
-being equal throughout a fuzzing campaign.
-%, whereby $\Pr(\mathrm{new} \cap
-%\mathrm{abnormal})$ then majorly depends on how high $\Pr(\mathrm{new})$ is;
-%proportional to the number of observed program behaviors per time.
-%
-However, targeted fuzzing (e.g., directed or regression fuzzing)
-\emph{prioritizes} code that likely leads to abnormal behaviors, which may result
-in a larger $\Pr(\mathrm{abnormal} \mid \mathrm{new})$ at the beginning that slowly
-decreases over time. 
+%This affects the fundamental observation for completeness because targeted
+%fuzzers may reveal more abnormal behaviors even after observing fewer program
+%behaviors.
+%%
+%One possible remedy is refining interestingness to incorporate a complete set of
+%factors that affects $\Pr(\mathrm{UA})$ (e.g., freshness of code).  A
+%further investigation on interestingness is required.
 
-This affects the fundamental observation for completeness because targeted
-fuzzers may reveal more abnormal behaviors even after observing fewer program
-behaviors.
+% FIXME: revise!
+\pp{Quality metric for general fuzzing}
 %
-One possible remedy is refining interestingness to incorporate a complete set of
-factors that affects $\Pr(\mathrm{abnormal})$ (e.g., freshness of code).  A
-further investigation on interestingness is required.
+The legitimacy of logic state coverage hinges on the current conventional
+understanding of interesting program behaviors in \emph{untargeted} fuzzing,
+namely the behaviors with less repetition. However, recent findings 
+\cite{regression,risk,root-causes-age} suggest that various code characteristics
+(e.g., the age of code) make some code likelier to cause bugs,
+which makes the program behaviors executing such a portion of code have a higher
+expectation to reveal unknown abnormal behaviors (i.e., more interesting).
+%
+\emph{Targeted} fuzzing \cite{regression,directed,risk} attempts to capitalize
+the findings by prioritizing such code, while logic state coverage would
+under-estimate their quality by only considering less repetition as more
+interesting. 
+
+For a quality metric that encompasses general (i.e., both untargeted and
+targeted) fuzzing, future research needs to address two issues around
+interestingness. First, it should refine the interestingness of program
+behaviors. Not only should it systemize the factors that decide interestingness,
+but also it should assess which factor affects \emph{more} than others by
+\emph{how much}.  Second, it should incorporate such refined interestingness
+into the quality metric. If it would follow the philisophy of logic state
+coverage (i.e., more uninteresting behavior in fewer logic states),
+\emph{grouping} uninteresting branches can be an approach as it makes the
+program behaviors with uninteresting branches occupy fewer logic states.
 
 
 \pp{Alternative ways to manage logic state coverage}

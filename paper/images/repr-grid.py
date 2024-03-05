@@ -21,7 +21,7 @@ for key in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
     ax.bar3d(*vols[key], color=(*colors[key], 0.45), linewidth=2, edgecolor=(1, 1, 1, 0.3))
 for key in [(1, 1, 0), (0, 1, 1), (1, 0, 1)]:
     ax.bar3d(*vols[key], color=(*colors[key], 0.25), linewidth=2, edgecolor=(1, 1, 1, 0.3))
-ax.bar3d(*vols[1, 1, 1], color=(*colors[1, 1, 1], 0.1), linewidth=2, edgecolor=(1, 1, 1, 0.3))
+ax.bar3d(*vols[1, 1, 1], color=(*colors[1, 1, 1], 0.25), linewidth=2, edgecolor=(1, 1, 1, 0.3))
 
 ax.set_aspect('equal', 'box')
 
