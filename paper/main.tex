@@ -496,11 +496,13 @@ cannot represent that of other behaviors in the same logic state.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\columnwidth]{images/repr.pdf}
-  \caption{Example control flow graph and the number of program behaviors
-  (numbers in a grid) given two branch hit counts. $m(b)$ denotes the hit count
-  of the branch $b$. Dotted lines demarcate whether the corresponding branch is
-  hit or not (i.e., presence in a logic state).}
+  \vspace{-1em}
+  \includegraphics[height=4.5cm]{images/repr-cfg.pdf}
+  \includegraphics[height=4.5cm]{images/repr-grid.pdf}
+  \vspace{-.5em}
+  \caption{Example control flow graph and its logic states (colored box) that
+  the program behaviors with different branch hit counts belong to. $m(b)$
+  denotes the hit count of branch $b$.}
   % Each region surrounded by dotted lines constitutes one logic state.}
   \label{f:repr}
 \end{figure}
@@ -516,28 +518,36 @@ larger coverage) as the observed program behaviors are more interesting.
 %states lump together larger hit counts into fewer integer buckets
 %(\autoref{e:ls}).
 
-\autoref{f:repr} shows an example control-flow graph and the number of possible
-program behaviors for each pair $(m(b_1), m(b_2))$, where $m(b)$ is the hit
-count of the branch $b$. For example, there are two possible program behaviors,
-$b_2$ after $b_1$ or $b_1$ after $b_2$, when $(m(b_1), m(b_2))=(1, 1)$. 
-%Notice that the back edge $b_3$ is always taken $m(b_1)+m(b_2)$ times by the shape of the graph.
-%
-The dotted lines demarcate whether the corresponding branch is hit or not, which
-also corresponds to the presence of the branch in a logic state.
-%the beginning of a new power-of-2 branch hit count
-%(e.g., 1, 2, 4, ...), where the hit counts between them share the same integer
-%bucket. 
-The surrounded region has the same set of satisfied branches, constituting
-\emph{one logic state}.
+\autoref{f:repr} shows an example control-flow graph and its logic states
+(colored boxes) that the program behaviors with different sets of satisfied
+branches belong to.
+%, where $m(b)$ denotes the hit count of a branch $b$. 
+For example, a program behavior that does not hit any colored branches (i.e.,
+$m(b_1)=m(b_2)=m(b_3)=0$) belongs to \cbox{black}, and a program
+behavior that only hits one of them (e.g., $m(b_i)>1$ and $m(b_j)=0$ for $i \in
+\{1,2,3\}$ and $j \ne i$) belongs to the logic state of the corresponding color
+(\cbox{red}, \cbox{green}, and \cbox{blue}).
+%The dotted lines demarcate whether the corresponding branch is hit or not, which
+%also corresponds to the presence of the branch in a logic state.
+%The surrounded region has the same set of satisfied branches, constituting
+%\emph{one logic state}.
 
-As shown, the program behaviors with more repetitive branches are grouped with
-more program behaviors as one logic state.  For example, a program behavior
-having only one repetitive branch (either $b_1$ or $b_2$) falls into the slim
-logic states adjacent to axis (bottom right and top left), while a behavior
-having two repetitive branches (both $b_1$ and $b_2$) falls into the large logic
-state (top right). This results in observing repetitive (i.e., less interesting)
-program states represented by fewer logic states, leading to smaller logic state
-coverage. 
+The figure shows the increasing size of logic states as their constituent
+program behaviors involve more repetitive branches. For example, a program
+behavior with two repetitive branches (i.e., $b_1$ and $b_2$, $b_2$ and $b_3$,
+or $b_1$ and $b_3$) falls into a larger logic state (e.g., \cbox{yellow},
+\cbox{cyan}, and \cbox{magenta}), and a behavior with three repetitive branches
+(i.e., all $b_1$, $b_2$, and $b_3$) falls into the largest logic state (i.e.,
+\cbox{gray}).
+%
+This results in observing repetitive (i.e., less interesting) program states
+represented by fewer logic states, leading to smaller logic state
+coverage.\footnote{It is worth noting that a coordinate in the grid does
+\emph{not} represent one program behavior. For example, a coordinate (1, 1, 0)
+represents two program behaviors, $b_1$ before $b_2$ and $b_2$ before $b_1$.
+However, it does not affect the relative size of visualized logic states because
+a coordinate only has more program behaviors as it gets further from the
+origin.}
 
 %%Notice that a program behavior is deemed more interesting as it exhibits
 %%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
