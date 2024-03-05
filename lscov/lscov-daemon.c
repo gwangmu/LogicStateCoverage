@@ -395,9 +395,11 @@ void* lscov_report(void * _unused) {
   
   float density = (float)num_1s / bfilter_size_bits * 100;
   u32 rate_ins = (u32)((cov - prev_cov) / tallying_period);
-  float rate_per = (float)(cov - prev_cov) / exec_count_in_period * 100;
+  float rate_per = !exec_count_in_period ? 
+    (float)(cov - prev_cov) / exec_count_in_period * 100 : 0;
   u32 rate_avg = (u32)(cov / prev_time); 
-  float rate_per_avg = (float)cov / exec_count * 100;
+  float rate_per_avg = !exec_count ? 
+    (float)cov / exec_count * 100 : 0;
 
 #ifdef PRINT_STAT
   SAYF("    density: %3.2f%%, rate: (ins) %'u ls/sec [%3.2f%%], (avg) %'u ls/sec [%3.2f%%]\n",
