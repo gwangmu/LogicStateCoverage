@@ -51,6 +51,7 @@ cov_unit_str = ""
 if (cov_unit_pow10 > 0):
     cov_unit_str = " (x$10^{}$)".format(cov_unit_pow10)
 
+# FIXME: there must be a better algorithm for this kind of stuff.
 time_unit = 1
 _max_time = data['Time'][-1]
 while (True):
@@ -59,13 +60,23 @@ while (True):
     elif (time_unit == 10):
         next_time_unit = 60
     elif (round(math.log(time_unit // 6, 10), 3).is_integer()):
-        next_time_unit = time_unit * 2
+        next_time_unit = (time_unit // 2) * 3
+    elif (round(math.log(time_unit // 9, 10), 3).is_integer()):
+        next_time_unit = (time_unit // 3) * 4 
     elif (round(math.log(time_unit // 12, 10), 3).is_integer()):
-        next_time_unit = (time_unit // 2) * 5
+        next_time_unit = (time_unit // 4) * 5
+    elif (round(math.log(time_unit // 15, 10), 3).is_integer()):
+        next_time_unit = (time_unit // 5) * 6 
+    elif (round(math.log(time_unit // 18, 10), 3).is_integer()):
+        next_time_unit = (time_unit // 3) * 4 
+    elif (round(math.log(time_unit // 24, 10), 3).is_integer()):
+        next_time_unit = (time_unit // 4) * 5 
     elif (round(math.log(time_unit // 30, 10), 3).is_integer()):
-        next_time_unit = time_unit * 2
+        next_time_unit = (time_unit // 2) * 3
+    elif (round(math.log(time_unit // 45, 10), 3).is_integer()):
+        next_time_unit = (time_unit // 3) * 4 
     _num_time_ticks = _max_time // next_time_unit
-    if (_num_time_ticks <= 2): break
+    if (_num_time_ticks <= 3): break
     time_unit = next_time_unit
 
 time_fmt = ticker.FuncFormatter(lambda ms, x: int(ms / 60))
@@ -86,6 +97,7 @@ ax[1].plot(data['Time'], data['RateS(avg)'], color='C1', linewidth=2)
 ax[1].set_xlabel("Time (min)")
 ax[1].set_ylabel("New Coverage (/sec)")
 ax[1].set_xlim([data['Time'][0], data['Time'][-1]])
+ax[1].set_ylim(bottom=0)
 ax[1].legend(["Inst", "Avg"], loc="upper right")
 ax[1].xaxis.set_major_formatter(time_fmt)
 ax[1].xaxis.set_major_locator(ticker.MultipleLocator(time_unit))
