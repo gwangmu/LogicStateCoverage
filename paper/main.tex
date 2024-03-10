@@ -982,29 +982,26 @@ alone revealing \emph{unknown} ones (\autoref{s:fuzz:unfuzz}).
 % FIXME: revise!
 \pp{Quality metric for general fuzzing}
 %
-The legitimacy of logic state coverage hinges on the current conventional
-understanding of interesting program behaviors in \emph{untargeted} fuzzing,
-namely the behaviors with less repetition. However, recent findings 
-\cite{regression,risk,root-causes-age} suggest that various code characteristics
-(e.g., the age of code) make some code likelier to cause bugs,
-which makes the program behaviors executing such a portion of code have a higher
-expectation to reveal unknown abnormal behaviors (i.e., more interesting).
-%
-\emph{Targeted} fuzzing \cite{regression,directed,risk} attempts to capitalize
-the findings by prioritizing such code, while logic state coverage would
-under-estimate their quality by only considering less repetition as more
+Logic state coverage evaluates the quality of \emph{untargeted} fuzzing, where
+the program behaviors with less repetition are generally deemed more
 interesting. 
+%
+However, \emph{targeted} fuzzing
+\cite{aflchurn,chen2020savior,osterlund2020parmesan,lee2024syzrisk} attempts to
+capitalize the recent findings \cite{aflchurn,zhai2022ndss,nikolaos2022longvuln}
+that some code such as recent patches are potentially \emph{more interesting}
+(i.e., likelier to cause abnormal behaviors), which may render logic state
+coverage to under-estimate targeted fuzzing by overlooking potentially
+interesting behaviors.
 
-For a quality metric that encompasses general (i.e., both untargeted and
-targeted) fuzzing, future research needs to address two issues around
-interestingness. First, it should refine the interestingness of program
-behaviors. Not only should it systemize the factors that decide interestingness,
-but also it should assess which factor affects \emph{more} than others by
-\emph{how much}.  Second, it should incorporate such refined interestingness
-into the quality metric. If it would follow the philisophy of logic state
-coverage (i.e., more uninteresting behavior in fewer logic states),
-\emph{grouping} uninteresting branches can be an approach as it makes the
-program behaviors with uninteresting branches occupy fewer logic states.
+To devise a quality metric that is also compatible to targeted fuzing, future
+research may need to address two issues revolving around interestingness. First,
+it should accurately describe the interestingness in an unpartial way (i.e., not
+favoring a certain fuzzer or setting). To do so, it should assess which factor
+affects interestingness and how much more than one another. Second, it should
+incorporate such a description into the quality metric. Should it follow the
+philisophy of logic state coverage, grouping uninteresting behaviors may be a
+possible approach to make them less significant.
 
 
 \pp{Alternative ways to manage logic state coverage}
