@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "stuff.h"
 #include "emoji.h"
@@ -482,6 +483,36 @@ void lscov_stop(int sig) {
 }
 
 
+void arg_parse(int argc, char** argv) {
+  /* GNU getopt() example:
+   * https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html */
+
+  int c;
+
+  opterr = 0;
+
+  while ((c = getopt (argc, argv, "o:")) != -1) {
+    switch (c) {
+    case 'o':
+      out_path = optarg;
+      ACTF("Output path: %s", out_path);
+      break;
+    case '?':
+      WARNF("Ignoring -%c...", optopt);
+      break;
+    default:
+      abort();
+    }
+  }
+
+  /* In case lscov requires non-option arguments in the future... */
+  // for (index = optind; index < argc; index++)
+  //   printf ("Non-option argument %s\n", argv[index]);
+
+  return;
+}
+
+
 void sig_init() {
   /* Install cleanup handler. */
   struct sigaction sa;
@@ -497,6 +528,9 @@ void sig_init() {
 
 int main(int argc, char** argv) {
   SAYF(cCYA "lscov-daemon v" VERSION cRST " by Gwangmu Lee <iss300@gmail.com>\n");
+
+  /* Argument parsing */
+  arg_parse(argc, argv);
   
   /* Initialization */
   ACTF("Initializating...");
