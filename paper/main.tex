@@ -410,12 +410,13 @@ of unknown abnormal behaviors.
 \section{Logic State Coverage}
 \label{s:lscov}
 
-In theory, relative completeness can be naively measured by counting distinctive
-program behaviors. However, this naive approach is infeasible as fuzzing
-produces hundreds of arbitrarily long instruction streams \emph{every second}.
+In theory, interesting behaviors can be naively counted by investigating
+every program behavior. However, this naive approach is infeasible as
+fuzzing produces hundreds of arbitrarily long instruction streams \emph{every
+second}.
 %
-In this section, we propose \emph{logic state coverage} as a proxy of relative
-completeness that indirectly counts interesting program behaviors.
+In this section, we propose \emph{logic state coverage} as an indirect proxy of
+counting interesting behaviors.
 
 
 \begin{figure}[t]
