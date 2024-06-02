@@ -46,9 +46,9 @@
 
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 
-\title{A Comparative Quality Metric for Fuzzing with Logic State Coverage}
+\title{A Comparative Quality Metric for Untargeted Fuzzing with Logic State Coverage}
 \author{
-  {\rm Gwangmu Lee} \\ {EPFL}
+  {\rm Gwangmu Lee} \\ {iss300@gmail.com}
 }
 
 % NOTE: for page numbering. will be removed at submission.
@@ -136,23 +136,25 @@ more discovered bugs is deemed as a positive indicator of the fuzzing quality.
 However, both metrics have been consistently refuted as unreliable. Edge
 coverage has long been discredited as a \emph{weak} proxy metric as it
 often leads to indecisive measurements; it is common to see the edge coverage
-comparisons offering little difference (e.g., equally saturated edge coverage in
-hypervisor virtual devices \cite{myung2022mundofuzz,sergej2021nyx}) or
-influenced by initial inputs (e.g., different requirements for initial inputs in
-grammar fuzzing \cite{chen2021polyglot}).
+comparisons offering little difference (e.g., equally saturated edge coverage 
+%in hypervisor virtual devices 
+\cite{myung2022mundofuzz,sergej2021nyx}) or
+influenced by initial inputs (e.g., different requirements for initial inputs 
+%in grammar fuzzing 
+\cite{chen2021polyglot}).
 %, in which cases researchers should resort to another way for demonstrating effectiveness.  
 Furthermore, some experiments yield counter-intuitive results where a code
-coverage increment does not necessarily translate to more discovered bugs so
-well \cite{google-ai}.
+coverage increment does not translate to more discovered bugs so well
+\cite{google-ai}.
 
-The number of discovered bugs, on the other hand, is a direct metric as it
-counts the very objects (i.e., bugs) that fuzzing aims to reveal. However, it is
-commonly known to be heavily sensitive to side factors such as bug
-deduplication, initial inputs, and the implementation details of both the fuzzer
-and the software under test \cite{klees2018evaluating}. It gets worse because
-the number of total bugs is usually only a handful,
+The number of discovered bugs, on the other hand, is a much more direct metric
+because it counts the very objects (i.e., bugs) that fuzzing aims to reveal.
+However, it is highly sensitive to side factors such as bug deduplicatation
+method, initial inputs, or the implementation details of both the fuzzer and the
+software under test \cite{klees2018evaluating}. Even worse, the number of total
+bugs is usually only a handful,
 %regardless of the software under test, 
-where unclear factors can introduce a measurement bias that significantly
+making unclear factors easily introduce a measurement bias that significantly
 exaggerates the result in certain software.
 
 % clarification: fuzzing as software testing method
@@ -187,11 +189,12 @@ abnormal behaviors.
 As it is challenging to directly count interesting program behaviors when
 fuzzing produces hundreds of them every second, we propose \emph{logic state
 coverage} as a feasible proxy metric of interesting behaviors. A logic state is
-a set of all satisfied branches during one execution, where logic state coverage
-is the \emph{individual count} of all observed distinct logic states during a
-fuzzing campaign. Logic states represent \emph{interesting} behaviors (i.e.,
-relating to unknown abnormal behaviors) in a finer granularity, meaning that
-observing more interesting behaviors is reliably reflected to larger coverage. 
+a set of all satisfied branches during one execution, encoding the
+exhibited program behavior without branch repetition information.
+As a consequence, less repetitive (i.e., more \emph{interesting}) program
+behaviors are reflected as more \emph{distinct} logic states. Logic state
+coverage counts all distinct observed logic states during a fuzzing campaign,
+which means that a larger coverage suggests more observed interesting behaviors.
 
 % design: edge bitmap rehashing
 %  - idea
@@ -567,8 +570,8 @@ origin.}
   \centering
   \includegraphics[width=\columnwidth]{images/local.pdf}
   \caption{Example control flow graph and program behaviors. The exceptional
-  condition $e$ is satisfied when $\mathrm{mem}(q)$ is a freed memory. $l(X)$
-  denotes the logic state of a program behavior $X$ (hit count omitted).}
+  condition $e$ is satisfied when the memory pointed by $q$ is a freed
+  memory. $l(X)$ denotes the logic state of a program behavior $X$.}
   % Each region surrounded by dotted lines constitutes one logic state.}
   \label{f:local}
 \end{figure}
@@ -576,18 +579,19 @@ origin.}
 \subsection{Normality}
 \label{s:prop:local}
 
-In one logic state, \emph{all} program behaviors are either normal or abnormal
-altogether. 
+As long as a program does not exhibit an exception at the program exit basic
+block, all program behaviors in one logic state have the same normality,
+namely either normal or abnormal altogether.
 %
-This is because normal behaviors trigger \emph{exit branches} before
-reaching program exit points, while abnormal behaviors do not. Since the logic
-states of two behaviors differ by exit branches, they cannot have the same set
-of satisfied branches, hence the same logic state.
+This is because normal behaviors always trigger the \emph{exit branches} that
+lead to the exit blocks, while abnormal behaviors do not. Since the logic
+states of two behaviors are always distinguished by exit branches, they cannot
+have the same set of satisfied branches (i.e., the same logic state).
 
 \autoref{f:local} shows an example program that contains a use-after-free
-exception $e$, which is satisfied when $\mathrm{mem}(q)$ belongs to freed
-memories. Three example program behaviors and their logic states are shown on
-the side. Since normal behaviors (Behaviors A and B) terminate at the program
+exception $e$, which is satisfied when the memory pointed by $q$ belongs to
+freed memories. Three example program behaviors and their logic states are shown
+on the side. Since normal behaviors (Behaviors A and B) terminate at the program
 exit, their logic states contain the exit branch $b_x$ that directly leads to
 the program exit. On the other hand, since the abnormal behavior (Behavior C)
 triggers the exception $e$ that crashes the execution before reaching the
