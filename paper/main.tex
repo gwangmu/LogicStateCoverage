@@ -242,38 +242,44 @@ a set of all possible program behaviors,
   p(i) = (o, h) \iff p: \mathbb{I} \rightarrow \mathbb{O} \times \mathbb{H}.
 \end{equation}
 
-%\pp{Normality of program behaviors}
+\pp{Program conditions}
 %
-Program behaviors can be divided into two classes depending on their
-\emph{normality}: normal and abnormal. Normal program behaviors are determined
-by a regular control flow and terminate at program exit points.  Abnormal
-program behaviors, on the other hand, are terminated unexpectedly by
-exceptions.\footnote{Sanitization can be seen as bringing (potentially) silent
-\emph{unintended} behaviors (e.g., integer-overflow or use-after-free) to the
-\emph{abnormal} territory.}
-
-\pp{Special case: single-thread programs}
-%
-For a single-thread program where every basic block always executes the
-contained instructions atomically, program behaviors are exclusively
-determined by the history of two kinds of conditions: branch and exceptional.
-Branch conditions (or \emph{branches}) decide the regular control flow between
-basic blocks. Exceptional conditions (or \emph{exceptions}), on the other hand,
-interrupt the control flow and abnormally terminate the
+Program conditions are the instructions that affect the control flow and
+transform the program behavior accordingly. They are further
+broken down to two kinds: branch and exceptional.
+Branch conditions (or \emph{branches}) decide the regular control
+flow between basic blocks. Exceptional conditions (or \emph{exceptions}), on the
+other hand, interrupt the control flow and abnormally terminate the
 program.\footnote{C++-style exceptions, despite its name, can be regarded as a
 form of branch conditions as they transfer the control flow to another basic
-block.} Notice that exceptions may be implicit and not specified in the
-program (e.g., $\mathrm{divisor}=0$ in divide-by-zero).
+block.} 
+%Notice that exceptions may be implicit and not specified in the program
+%(e.g., $\mathrm{divisor}=0$ in divide-by-zero).
 
-%Notice that exceptions may be implicit, unlike branches that are always explicit
-%in the program; exceptions such as assertions are explicitly specified in
-%the program, but others such as divide-by-zero (i.e., $\mathrm{divisor}=0$) or
-%buffer-overflow (i.e., $\mathrm{offset} \ge \mathrm{size}$) are implicit and
-%only enforced by the system.
+\pp{Normality of program behaviors}
+%
+Program behaviors can be divided into two classes depending on the satisfied
+program conditions: normal and abnormal. Normal program behaviors only satisfy
+regular branches and terminate at program exit points. Abnormal
+program behaviors, on the other hand, satisfy at least one exception and
+terminate at non-exit points. Sanitization
+\cite{yun2016apisan,serebryany2012asan,kasan,ktsan,kubsan,stepanov2015msan,ubsan} can be seen as bringing
+\emph{unintended} behaviors (e.g., integer-overflow or use-after-free) to the
+\emph{abnormal} territory by adding exceptions.
+
+\pp{Uniqueness of program behaviors}
+%
+For a single-thread program, 
+%where every basic block always executes the contained instructions atomically, 
+program behaviors are exclusively determined by the history of program
+conditions. This is because a single-thread program always executes the 
+instructions sequentially until the next program condition, making every
+portion of the instruction stream \emph{implied} by terminating program
+conditions.
 
 Formally, let $\mathcal{T}_b$ and $\mathcal{T}_e$ be the history of branches and
 exceptions. Then, for a single-thread program, there exists a function
-$f(\mathcal{T}_b, \mathcal{T}_e) = h$ that one-to-one maps a pair
+$f(\mathcal{T}_b, \mathcal{T}_e) = h$ that uniquely maps a pair
 $(\mathcal{T}_b, \mathcal{T}_e)$ to a certain program behavior $h$.
 %
 %\begin{equation}
@@ -381,21 +387,20 @@ it include more repetitions.
 %  - ensuring no more unknown flaws.
 %  - "the more rigorous, the less probable the tested parts still have flaws."
 
-\pp{Completeness of untargeted fuzzing}
+\pp{Quality of untargeted fuzzing}
 %
 As the procedure of untargeted fuzzing can be seen as maximizing observed
 interesting behaviors in the program behavior space, the portion of such 
-behaviors in the space directly indicates the \emph{completeness} of the
+behaviors in the space directly indicates the \emph{quality} of the
 procedure: the more it checks such behaviors, the less the unknown
 abnormal behaviors are expected to be left.
 
-Based on this, we can define the \emph{relative completeness} between
+Based on this, we can define the \emph{comparative quality} between
 different untargeted fuzzing techniques as follows: given the same amount of
 time and computing resource, \textbf{how many more interesting program behaviors
-has it observed than others?} We argue that relative completeness is a
-\emph{strong quality metric} for untargeted fuzzing as it closely indicates how
-much more a fuzzer reduces the expectation of unknown abnormal behaviors than
-others. 
+can it observe than others?} We argue that this is a \emph{strong quality
+metric} for untargeted fuzzing as it directly compares the reduced expectation
+of unknown abnormal behaviors. 
 
 %Notice that, in contrast, it is hard to measure \emph{absolute} completeness
 %because the total number of behaviors is unknown.  \autoref{s:disc} discusses
