@@ -415,7 +415,7 @@ every program behavior. However, this naive approach is infeasible as
 fuzzing produces hundreds of arbitrarily long instruction streams \emph{every
 second}.
 %
-In this section, we propose \emph{logic state coverage} as an indirect proxy of
+In this section, we propose \emph{logic state coverage} as an indirean indirectt proxy of
 counting interesting behaviors.
 
 
@@ -519,44 +519,44 @@ cannot represent that of other behaviors in the same logic state.
 \subsection{Interestingness}
 \label{s:prop:repr}
 
-Logic states distinguish the program behaviors with less branch repetitions in a
-finer granularity, resulting in a higher number of covered logic states (i.e.,
-larger coverage) as the observed program behaviors are more interesting.
+Logic states coalesce the program behaviors in a fewer logic states as the
+behaviors contain more branch repetitions, resulting in a smaller (or larger)
+logic state coverage as it observes more uninteresting (or interesting) program
+behaviors.
 
 %This is because logic
 %states lump together larger hit counts into fewer integer buckets
 %(\autoref{e:ls}).
 
-\autoref{f:repr} shows an example control-flow graph and its logic states
-(colored boxes) that the program behaviors with different sets of satisfied
-branches belong to.
+\autoref{f:repr} shows an example control-flow graph and its logic space,
+gridded up by the different hit counts of the branch $b_1$, $b_2$, and $b_3$.
 %, where $m(b)$ denotes the hit count of a branch $b$. 
-For example, a program behavior that does not hit any colored branches (i.e.,
-$m(b_1)=m(b_2)=m(b_3)=0$) belongs to \cbox{black}, and a program
-behavior that only hits one of them (e.g., $m(b_i)>1$ and $m(b_j)=0$ for $i \in
-\{1,2,3\}$ and $j \ne i$) belongs to the logic state of the corresponding color
-(\cbox{red}, \cbox{green}, and \cbox{blue}).
-%The dotted lines demarcate whether the corresponding branch is hit or not, which
-%also corresponds to the presence of the branch in a logic state.
-%The surrounded region has the same set of satisfied branches, constituting
-%\emph{one logic state}.
+Each colored box represents one logic state that includes all program
+behaviors that exhibit the branch hit counts at the enclosed grid points.
+For example, a program behavior that does not hit any of $b_1$, $b_2$, and $b_3$ 
+(i.e., $m(b_1)=m(b_2)=m(b_3)=0$) falls into the \cbox{black} logic state, while
+all program behaviors that hit only $b_1$ (i.e., $m(b_1)>1$ and
+$m(b_2)=m(b_3)=0$) fall into the \cbox{red} logic state.
+%, and all program behaviors that hit only $b_2$ and $b_3$ (i.e.,
+%$m(b_1)>1$, $m(b_2)>1$, and $m(b_3)=0$) fall into the \cbox{cyan} logic state.
 
-The figure shows the increasing size of logic states as their constituent
-program behaviors involve more repetitive branches. For example, a program
-behavior with two repetitive branches (i.e., $b_1$ and $b_2$, $b_2$ and $b_3$,
-or $b_1$ and $b_3$) falls into a larger logic state (e.g., \cbox{yellow},
-\cbox{cyan}, and \cbox{magenta}), and a behavior with three repetitive branches
-(i.e., all $b_1$, $b_2$, and $b_3$) falls into the largest logic state (i.e.,
-\cbox{gray}).
+The colored boxes in \autoref{f:repr} suggest the increasing size of logic
+states as their constituent program behaviors involve more repetitive branches.
+To be specific, a logic state covers a progressively larger volume in the logic
+space (i.e., \cbox{black} $\rightarrow$ \cbox{red}/\cbox{green}/\cbox{blue}
+$\rightarrow$ \cbox{yellow}/\cbox{cyan}/\cbox{magenta} $\rightarrow$
+\cbox{gray}) as it contains more repetitive branches (i.e., 0 $\rightarrow$ 1
+$\rightarrow$ 2 $\rightarrow$ 3 repetitive branches). 
 %
-This results in observing repetitive (i.e., less interesting) program states
-represented by fewer logic states, leading to smaller logic state
-coverage.\footnote{It is worth noting that a coordinate in the grid does
-\emph{not} represent one program behavior. For example, a coordinate (1, 1, 0)
-represents two program behaviors, $b_1$ before $b_2$ and $b_2$ before $b_1$.
-However, it does not affect the relative size of visualized logic states because
-a coordinate only has more program behaviors as it gets further from the
-origin.}
+This results in repetitive (i.e., less interesting) program states coalesced to
+fewer logic states, suppressing logic state coverage as it observes
+uninteresting behaviors more.
+%\footnote{It is worth noting that a coordinate in the grid does
+%\emph{not} represent one program behavior. For example, a coordinate (1, 1, 0)
+%represents two program behaviors, $b_1$ before $b_2$ and $b_2$ before $b_1$.
+%However, it does not affect the relative size of visualized logic states because
+%a coordinate only has more program behaviors as it gets further from the
+%origin.}
 
 %%Notice that a program behavior is deemed more interesting as it exhibits
 %%smaller branch hit counts (\autoref{s:fuzz:unfuzz}). 
@@ -585,12 +585,12 @@ origin.}
 \subsection{Normality}
 \label{s:prop:local}
 
-As long as a program does not exhibit an exception at the program exit basic
-block, all program behaviors in one logic state have the same normality,
-namely either normal or abnormal altogether.
+Given that a program does not exhibit an exception exactly at the program exit
+point, all program behaviors in one logic state have the same normality, namely
+either normal or abnormal altogether.
 %
-This is because normal behaviors always trigger the \emph{exit branches} that
-lead to the exit blocks, while abnormal behaviors do not. Since the logic
+This is because normal behaviors trigger the \emph{exit branches} that
+lead to the exit point, while abnormal behaviors do not. Since the logic
 states of two behaviors are always distinguished by exit branches, they cannot
 have the same set of satisfied branches (i.e., the same logic state).
 
@@ -904,18 +904,21 @@ number of observed logic states (\autoref{s:design:count}).
 \section{Discussion}
 \label{s:disc}
 
-\pp{Absolute completeness of untargeted fuzzing}
+\pp{Completeness of untargeted fuzzing}
 %
-Unlike relative completeness, it is difficult to measure the \emph{absolute}
-completeness of untargeted fuzzing because the total number of program behaviors
-is unknown: if it can be known, then we would already know which abnormal
-behaviors are possible, precluding the necessity of fuzzing in the first place.
+Unlike comparative quality that only requires to compare the number of observed
+distinct program behaviors, it is difficult to measure the absolute
+\emph{completeness} of untargeted fuzzing that requires to measure how much a
+program has been completely verified. This is because the total number of
+program behaviors is unknown: if it can be known, then we would already know
+which abnormal behaviors are possible, precluding the necessity of fuzzing in
+the first place.
 
 One possible compromise is performing preliminary static analysis to
 \emph{estimate} the total number of program behaviors, including abnormal ones.
 However, it would pose a potential problem that the estimated 100\% completeness
-does not necessarily mean the actual 100\% completeness, which would defeat the
-major benefit of absolute completeness.
+does not necessarily mean the actual 100\% completeness, which may compromise
+the very purpose of measuring absolute completeness.
 
 \pp{Generalization to multi-thread programs}
 %
@@ -924,7 +927,7 @@ execute multiple basic blocks. In this case, a program behavior (i.e., a stream
 of executed instructions) also depends on the thread interleaving in
 addition to the branch and exception histories, which breaks the proxy
 properties of a logic space (i.e., interestingness and normality).
-An alternative proxy of relative completeness may be proposed by either
+An alternative proxy of comparative quality may be proposed by either
 extending logic state coverage or devising yet another coverage metric.
 
 \pp{Normality of a partial logic state}
@@ -1006,11 +1009,11 @@ interesting behaviors.
 
 To devise a quality metric that also encompasses targeted fuzing, future
 research may need to address two issues revolving around interestingness. First,
-it should accurately describe the interestingness in an unpartial way (i.e., not
+it should accurately describe the interestingness in an impartial way (i.e., not
 favoring a certain fuzzer or setting). To do so, it should assess which factor
 affects interestingness and how much more than one another. Second, it should
 incorporate such a description into the quality metric. Should it follow the
-philisophy of logic state coverage, grouping uninteresting behaviors may be a
+philosophy of logic state coverage, grouping uninteresting behaviors may be a
 possible approach to make them less significant.
 
 
