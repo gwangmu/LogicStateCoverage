@@ -520,8 +520,8 @@ cannot represent that of other behaviors in the same logic state.
 \label{s:prop:repr}
 
 Logic states coalesce the program behaviors in a fewer logic states as the
-behaviors contain more branch repetitions, resulting in a smaller (or larger)
-logic state coverage as it observes more uninteresting (or interesting) program
+behaviors contain more branch repetitions, resulting in a smaller (larger)
+logic state coverage as it observes more uninteresting (interesting) program
 behaviors.
 
 %This is because logic
@@ -548,9 +548,9 @@ $\rightarrow$ \cbox{yellow}/\cbox{cyan}/\cbox{magenta} $\rightarrow$
 \cbox{gray}) as it contains more repetitive branches (i.e., 0 $\rightarrow$ 1
 $\rightarrow$ 2 $\rightarrow$ 3 repetitive branches). 
 %
-This results in repetitive (i.e., less interesting) program states coalesced to
-fewer logic states, suppressing logic state coverage as it observes
-uninteresting behaviors more.
+This results in repetitive (i.e., uninteresting) program states packed
+to fewer logic states, suppressing (boosting) logic state coverage as it observes more
+uninteresting (interesting) behaviors.
 %\footnote{It is worth noting that a coordinate in the grid does
 %\emph{not} represent one program behavior. For example, a coordinate (1, 1, 0)
 %represents two program behaviors, $b_1$ before $b_2$ and $b_2$ before $b_1$.
