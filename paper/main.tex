@@ -345,8 +345,9 @@ As the interestingness $\Pr(\mathrm{UA} \mid \mathrm{N})$ is the expectation of
 an \emph{unobserved} behavior, there is no direct way to measure
 interestingness. 
 %
-However, the common usage of corpus minimization \cite{todo} and branch hit
-count buckets \cite{todo} in untargeted fuzzing suggests that a program behavior
+However, the common usage of corpus minimization
+\cite{libfuzzer,efffuzz,herrera2021seedsel,herrera2021seedsel} and branch hit
+count buckets \cite{afl,libfuzzer} in untargeted fuzzing suggests that a program behavior
 is less likely to be \emph{unknown abnormal} (i.e., less interesting) if its
 mutation base input is highly repetitive.
 %in modern untargeted fuzzing.
@@ -519,9 +520,9 @@ cannot represent that of other behaviors in the same logic state.
 \subsection{Interestingness}
 \label{s:prop:repr}
 
-Logic states coalesce the program behaviors in a fewer logic states as the
-behaviors contain more branch repetitions, resulting in smaller (larger)
-logic state coverage as it observes more uninteresting (interesting) program
+Logic states coalesce less interesting program behaviors that exhibit more
+branch repetitions in a fewer logic states, resulting in smaller (larger) logic
+state coverage as it observes more uninteresting (interesting) program
 behaviors.
 
 %This is because logic
@@ -542,8 +543,9 @@ $m(b_2)=m(b_3)=0$) fall into the \cbox{red} logic state.
 
 The colored boxes in \autoref{f:repr} suggest the increasing size of logic
 states as their constituent program behaviors involve more repetitive branches.
-To be specific, a logic state covers a progressively larger volume in the logic
-space (i.e., \cbox{black} $\rightarrow$ \cbox{red}/\cbox{green}/\cbox{blue}
+To be specific, a logic state covers a progressively larger volume 
+%in the logic space 
+(i.e., \cbox{black} $\rightarrow$ \cbox{red}/\cbox{green}/\cbox{blue}
 $\rightarrow$ \cbox{yellow}/\cbox{cyan}/\cbox{magenta} $\rightarrow$
 \cbox{gray}) as it contains more repetitive branches (i.e., 0 $\rightarrow$ 1
 $\rightarrow$ 2 $\rightarrow$ 3 repetitive branches). 
