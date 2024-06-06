@@ -532,19 +532,19 @@ behaviors.
 \autoref{f:repr} shows an example control-flow graph and its logic space,
 gridded up by the different hit counts $m(b)$ of the branch $b_1$, $b_2$, and $b_3$.
 %, where $m(b)$ denotes the hit count of a branch $b$. 
-Each colored box represents one logic state that includes all program
-behaviors that exhibit the branch hit counts at the enclosed grid points.
+Each colored box represents one logic state, which includes all program
+behaviors that fall into the box.
 For example, a program behavior that does not hit any of $b_1$, $b_2$, and $b_3$ 
-(i.e., $m(b_1)=m(b_2)=m(b_3)=0$) falls into the \cbox{black} logic state, while
+(i.e., $m(b_1)=m(b_2)=m(b_3)=0$) belongs to the \cbox{black} logic state, while
 all program behaviors that hit only $b_1$ (i.e., $m(b_1)>1$ and
-$m(b_2)=m(b_3)=0$) fall into the \cbox{red} logic state.
+$m(b_2)=m(b_3)=0$) fall into \cbox{red}.
 %, and all program behaviors that hit only $b_2$ and $b_3$ (i.e.,
 %$m(b_1)>1$, $m(b_2)>1$, and $m(b_3)=0$) fall into the \cbox{cyan} logic state.
 
 The colored boxes in \autoref{f:repr} suggest the increasing size of logic
 states as their constituent program behaviors involve more repetitive branches.
 To be specific, a logic state covers a progressively larger volume 
-%in the logic space 
+in the logic space 
 (i.e., \cbox{black} $\rightarrow$ \cbox{red}/\cbox{green}/\cbox{blue}
 $\rightarrow$ \cbox{yellow}/\cbox{cyan}/\cbox{magenta} $\rightarrow$
 \cbox{gray}) as it contains more repetitive branches (i.e., 0 $\rightarrow$ 1
