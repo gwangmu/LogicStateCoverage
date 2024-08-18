@@ -32,7 +32,7 @@ for raw_datum in raw_data:
 
 # Draw figures.
 
-fig, ax = plt.subplots(ncols=3, figsize=(10, 3), layout="tight")
+fig, ax = plt.subplots(ncols=3, figsize=(10, 2.6), layout="tight")
 
 ax[0].set_box_aspect(0.75)
 ax[1].set_box_aspect(0.75)
@@ -144,5 +144,5 @@ ax[2].xaxis.set_major_locator(ticker.MultipleLocator(time_unit_in_sec))
 
 # Save.
 
+#plt.savefig('lscov.pdf')
 plt.show()
-#plt.savefig('lscov.png')
