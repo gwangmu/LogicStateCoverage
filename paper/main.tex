@@ -886,12 +886,42 @@ number of observed logic states (\autoref{s:design:count}).
 
 
 
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/aflpp-xmllint-epfl.pdf}
+  \caption{24-hour fuzzing campaign of XMLLint on AFL++. (Ins: instantaneous,
+    Avg: average)}
+  \label{f:aflpp-xmllint-epfl}
+\end{figure*}
+
 \section{Experiment}
 
 \subsection{Preliminary Result}
 
-\subsection{Experiment Plan}
+\autoref{f:aflpp-xmllint-epfl} shows the preliminary evaluation result
+using XMLLint and AFL++. The evaluation was done on a Intel Core i7-8665U CPU
+machine with 16 GB of memory. The logic state coverage (left) shows the covered
+distinctive logic states over time. The new coverage per second (middle) shows
+the number of newly discovered logic states per time, while the new coverage per
+execution (right) shows the percentage of executions that discovered new logic
+states per execution. \textsc{Avg} indicates the average new coverage per second
+or per execution, and \textsc{Ins} indicates the instantaneous new coverage
+during the last 10-second measurement frame.
 
+The logic state coverage increases steadily over time, but it gradually slows
+down toward the 24-hour mark. This trend is also reflected in the new coverage
+plot, where the average new coverage slowly decreases to a steady point toward
+the end of the fuzzing campaign.
+
+The sporadic peaks in the instantaneous new coverage plot (\textsc{Ins}) are
+mainly due to the favorable in-flight seeds at the moment, which allowed AFL++
+to execute XMLLint quicker. This results in more peaks in the "per second" plot
+than in the "per execution" plot, where the discovered new logic states were
+bigger than the average but the percentage of new logic states per execution
+remained low.
+
+%\subsection{Experiment Plan}
+%
 %\subsection{Measurement Overheads}
 %\subsection{General-purpose Fuzzing}
 %\subsection{Hypervisor Fuzzing}
