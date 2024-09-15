@@ -79,15 +79,16 @@
   
   In this work, we propose \emph{logic state coverage} as a proxy metric to
   count observed interesting behaviors. A logic state is a set of satisfied
-  branches during one execution, where logic state coverage is the count of
+  branches during one execution, where its coverage is the count of
   \emph{individual} observed logic states during a fuzzing campaign. A logic
   state distinguishes less repetitive (i.e., more interesting) behaviors in a
   finer granularity, making the amount of logic state coverage reliably 
   proportional to the number of observed interesting behaviors.
   % 
-  We implemented logic state coverage using a bloom filter and reevaluated
-  \textsc{FuzzBench} and indecisive-to-subjective fuzzer comparisons in
-  hypervisor and grammar fuzzing. 
+  We implemented logic state coverage using a bloom filter and performed a
+  preliminary evaluation with AFL++ and XMLLint.
+  % reevaluated \textsc{FuzzBench} and indecisive-to-subjective fuzzer
+  % comparisons in hypervisor and grammar fuzzing. 
   % TODO: (The result summary will come here)
 
 \end{abstract}
@@ -894,34 +895,57 @@ number of observed logic states (\autoref{s:design:count}).
   \label{f:aflpp-xmllint-epfl}
 \end{figure*}
 
-\section{Experiment}
+\section{Evaluation}
 
 \subsection{Preliminary Result}
 
 \autoref{f:aflpp-xmllint-epfl} shows the preliminary evaluation result
-using XMLLint and AFL++. The evaluation was done on a Intel Core i7-8665U CPU
-machine with 16 GB of memory. The logic state coverage (left) shows the covered
-distinctive logic states over time. The new coverage per second (middle) shows
-the number of newly discovered logic states per time, while the new coverage per
-execution (right) shows the percentage of executions that discovered new logic
-states per execution. \textsc{Avg} indicates the average new coverage per second
-or per execution, and \textsc{Ins} indicates the instantaneous new coverage
-during the last 10-second measurement frame.
+using XMLLint and AFL++. The evaluation was done on an Intel Core i7-8665U CPU
+machine with 16 GB of memory. The logic state coverage (left) shows the
+distinctive logic states covered over time. The new coverage per second (middle)
+shows the number of newly discovered logic states per time, while the new
+coverage per execution (right) shows the percentage of executions that
+discovered new logic states per execution. \textsc{Avg} indicates the average
+new coverage per second or per execution, and \textsc{Ins} indicates the
+instantaneous new coverage during the last 10-second measurement frame.
 
-The logic state coverage increases steadily over time, but it gradually slows
+The logic state coverage increases steadily over time but gradually slows
 down toward the 24-hour mark. This trend is also reflected in the new coverage
 plot, where the average new coverage slowly decreases to a steady point toward
 the end of the fuzzing campaign.
-
-The sporadic peaks in the instantaneous new coverage plot (\textsc{Ins}) are
-mainly due to the favorable in-flight seeds at the moment, which allowed AFL++
-to execute XMLLint quicker. This results in more peaks in the "per second" plot
-than in the "per execution" plot, where the discovered new logic states were
-bigger than the average but the percentage of new logic states per execution
-remained low.
-
-%\subsection{Experiment Plan}
 %
+Notice that the sporadic spikes in the instantaneous new coverage (\textsc{Ins})
+are more in the per-second plot than in the per-execution plot, suggesting that
+these sudden new coverage surges were primarily caused by quicker execution. 
+
+\subsection{Research Questions}
+
+Some of the prime research questions that further evaluation should answer
+include the following.
+
+\begin{itemize}
+  \item \textbf{RQ1} Can logic state coverage be implemented with all
+    requirements in \autoref{s:measure:req} satisfied?
+  \item \textbf{RQ2} How does logic state coverage measure the comparative
+    quality of popular untargeted fuzzers?
+  \item \textbf{RQ3} Can logic state coverage distinguish the quality of the
+    fuzzers indistinguishable from conventional edge coverage?
+\end{itemize}
+
+For \textbf{RQ1}, the evaluation may evaluate the computation and memory
+overhead added by the logic state coverage measurement. It should not perturb
+the execution speed of measured fuzzers to minimize the measurement bias. For
+\textbf{RQ2}, the evaluation may compare the logic state coverage of popular
+untargeted fuzzers \cite{afl,fioraldi2020aflpp,libfuzzer,honggfuzz} with a
+set of standard fuzzing targets (e.g., FuzzBench \cite{metzman2021fuzzbench}).
+For \textbf{RQ3}, the evaluation may compare the logic state coverage of
+specialized fuzzers (e.g., hypervisor fuzzers
+\cite{liu2023videzzo,myung2022mundofuzz,sergej2021nyx,schumilo2020hypercube} and
+grammar fuzzers
+\cite{wang2023fuzzjit,wu2023jitfuzz,gross2023fuzzilli,srivastava2021gramatron,chen2021polyglot}),
+whose quality has not been well-distinguished by a conventional edge coverage
+metric.
+
 %\subsection{Measurement Overheads}
 %\subsection{General-purpose Fuzzing}
 %\subsection{Hypervisor Fuzzing}
