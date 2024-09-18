@@ -827,8 +827,9 @@ likely falls within given a confidence probability \cite{papapetrou2010cardinali
 %To satisfy the requirements, we incorporate a \emph{bloom filter} to manage a
 %set of observed logic states. 
 In this section, we first present the design overview (\autoref{s:design:over})
-and elaborate on details (\autoref{s:design:rec} and \ref{s:design:count}).
-
+and elaborate on details (\autoref{s:design:rec} and
+\ref{s:design:count}). The implementation in progress can be found at
+\url{https://github.com/gwangmu/LogicStateCoverage}.
 
 \begin{figure}[t]
   \centering
@@ -870,6 +871,13 @@ number of observed logic states (\autoref{s:design:count}).
 %  - (R1) proven by practice.
 %  - (R3) minimal memory requirement -- around 64KB.
 
+Recording a logic state is equivalent to tracing executed edges in conventional
+edge coverage. Specifically, a taken edge is calculated by combining the
+hashes of two consecutively executed basic blocks, which is then added to the
+logic state of the current execution. Notice that a logic state is \textit{per
+execution} and is not merged throughout multiple executions as in edge
+coverage. We implemented logic state recoding based on the LLVM pass for
+\cc{afl-clang-fast} \cite{afl}.
 
 \subsection{Updating Logic State Coverage}
 \label{s:design:up}
@@ -881,11 +889,11 @@ number of observed logic states (\autoref{s:design:count}).
 % determining bloom filter parameters
 %  -
 
-
-\subsection{Counting Logic State Coverage}
-\label{s:design:count}
-
-
+The recorded logic state is updated to the bloom filter at the end of every
+execution. In particular, a number of hashes are calculated from the entire
+logic state (i.e., \cc{A}, \cc{B}, \cc{C}, and \cc{D} in \autoref{f:design}) and
+are used as bloom filter indices to be set. We used MurMurHash3
+\cite{murmurhash3} to hash a logic state.
 
 \begin{figure*}[t]
   \centering
@@ -894,6 +902,15 @@ number of observed logic states (\autoref{s:design:count}).
     Avg: average)}
   \label{f:aflpp-xmllint-epfl}
 \end{figure*}
+
+\subsection{Counting Logic State Coverage}
+\label{s:design:count}
+
+Finally, the logic state coverage of the fuzzing campaign is measured by
+periodically reading off the bloom filter, where the number of 1s in the filter
+is fed to \autoref{e:count} to count the distinctive number of observed logic
+states. We implemented logic state coverage measurement as a separate process,
+which a measurer should launch before starting a fuzzing campaign.
 
 \section{Evaluation}
 
@@ -928,8 +945,8 @@ include the following.
     requirements in \autoref{s:measure:req} satisfied?
   \item \textbf{RQ2} How does logic state coverage measure the comparative
     quality of popular untargeted fuzzers?
-  \item \textbf{RQ3} Can logic state coverage distinguish the quality of the
-    fuzzers indistinguishable from conventional edge coverage?
+  \item \textbf{RQ3} Can logic state coverage distinguish the fuzzers
+    indistinguishable from conventional edge coverage?
 \end{itemize}
 
 For \textbf{RQ1}, the evaluation may evaluate the computation and memory
@@ -970,8 +987,8 @@ the first place.
 One possible compromise is performing preliminary static analysis to
 \emph{estimate} the total number of program behaviors, including abnormal ones.
 However, it would pose a potential problem that the estimated 100\% completeness
-does not necessarily mean the actual 100\% completeness, which may compromise
-the very purpose of measuring absolute completeness.
+does not necessarily mean the actual 100\% completeness, defeating the very
+purpose of measuring \textit{completeness}.
 
 \pp{Generalization to multi-thread programs}
 %
@@ -1148,6 +1165,18 @@ metric.
 
 
 \section{Conclusion}
+
+While fuzzing is widely accepted as an efficient program testing technique, 
+it still lacks the metric to comparatively measure the quality of various
+designs and implementations. To establish a reliable quality metric, we
+note that the more interesting behaviors a fuzzer has observed, the stronger
+guarantee it can provide about the absence of unknown abnormal behaviors. Based
+on this, we propose \emph{logic state coverage} as a proxy metric to count
+observed interesting behaviors. A logic state is a set of satisfied branches
+during one execution, where its coverage is the count of \emph{individual}
+observed logic states during a fuzzing campaign. We implemented logic state
+coverage using a bloom filter and performed a preliminary evaluation with AFL++
+and XMLLint.
 
 
 %-------------------------------------------------------------------------------
