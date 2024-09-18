@@ -14,3 +14,7 @@ wget $LLVM_URL && \
   mkdir llvm && \
   tar -xvf $LLVM_TAR_NAME -C llvm --strip-component 1 && \
   rm $LLVM_TAR_NAME
+
+# Install some dependencies
+
+sudo apt install cmake
