@@ -1,3 +1,3 @@
 # Logic State Coverage
 
-Counts the number of logic states (=set of satisfied branches in one execution) during fuzzing. [[paper]](https://arxiv.org/abs/2409.14987)
+Records a logic state (i.e., a set of satisfied branches) in one execution to measure logic state coverage. [[paper]](https://arxiv.org/abs/2409.14987)
